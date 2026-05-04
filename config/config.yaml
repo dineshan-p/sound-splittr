@@ -1,0 +1,40 @@
+# Stem splitter configuration
+
+# Model settings
+model:
+  # Choose which demucs model to use
+  name: htdemucs
+  # GPU settings (cuda or cpu)
+  device: auto
+
+  # GPU memory allocation (fraction of total memory)
+  gpu_mem_frac: 0.5
+
+  # These control audio quality/resampling
+  num_workers: 2
+  resamples: 2
+
+# Output settings
+output:
+  # Output file format
+  format: mp3
+
+  # Audio bitrate (kbps)
+  bitrate: 320
+
+  # Output stem names
+  stems:
+    - vocals
+    - drums
+    - bass
+    - other
+
+# Pre-processing
+preprocessing:
+  normalize: true
+  min_amplitude: 0.001
+  denoise: false
+
+# Quality settings (0 = fastest, 3 = highest quality)
+quality:
+  level: 1

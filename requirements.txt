@@ -1,0 +1,18 @@
+# Python dependencies for stem splitter
+# Install with: pip install -r requirements.txt
+demucs
+soundfile
+torch
+torchaudio
+pydub
+numpy
+pandas
+pyyaml
+python-dotenv
+# Web interface (optional)
+streamlit
+# CLI
+click
+# Testing
+pytest
+pytest-cov
