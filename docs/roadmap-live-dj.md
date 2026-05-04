@@ -293,11 +293,24 @@ python src/cli/main.py --live-mode --input song.mp3 --output test_live/
 
 | Day       | Priority | Build                                 | Why it matters                              |
 | --------- | -------- | ------------------------------------- | ------------------------------------------- |
-| **Day 1** | ⭐⭐⭐   | Test core + create first tutorial doc | Verify functionality, understand basics     |
-| **Day 2** | ⭐⭐⭐   | GPU status display in CLI             | Know your hardware before the gig           |
-| **Day 3** | ⭐⭐⭐   | Batch playlist with crash recovery    | One failed track shouldn't abort the set    |
-| **Day 4** | ⭐⭐     | Benchmark different models            | Learn which model works best for each genre |
-| **Day 5** | ⭐       | "Live mode" settings (WAV output)     | Zero-generation loss for critical moments   |
+| **Day 1** ✅ | ⭐⭐⭐   | Test core + create first tutorial doc | Verify functionality, understand basics     |
+| **Day 2** 🟡 | ⭐⭐⭐   | GPU status display in CLI             | Know your hardware before the gig           |
+| **Day 3** 🔴 | ⭐⭐⭐   | Batch playlist with crash recovery    | One failed track shouldn't abort the set    |
+| **Day 4** 🔴 | ⭐⭐     | Benchmark different models            | Learn which model works best for each genre |
+| **Day 5** 🔴 | ⭐       | "Live mode" settings (WAV output)     | Zero-generation loss for critical moments   |
+
+### Progress Legend:
+- 🟡 Day 2: GPU status display - **in progress**
+- 🔴 Days 3-5: Not yet started
+
+---
+
+## ✅ What's Been Completed
+
+- [x] Created comprehensive day-by-day roadmap (`docs/roadmap-live-dj.md`)
+- [x] Tested core functionality - `demo.py` loads successfully with CUDA
+- [x] All unit & integration tests passing (11 tests total, ~1s runtime)
+- [x] Committed roadmap to git repository with proper documentation
 
 ---
 
