@@ -294,15 +294,14 @@ python src/cli/main.py --live-mode --input song.mp3 --output test_live/
 | Day          | Priority | Build                                 | Why it matters                              |
 | ------------ | -------- | ------------------------------------- | ------------------------------------------- |
 | **Day 1** ✅ | ⭐⭐⭐   | Test core + create first tutorial doc | Verify functionality, understand basics     |
-| **Day 2** 🟡 | ⭐⭐⭐   | GPU status display in CLI             | Know your hardware before the gig           |
+| **Day 2** ✅ | ⭐⭐✅ | GPU status display in CLI (Step 2.1) | Know your hardware before the gig           |
 | **Day 3** 🔴 | ⭐⭐⭐   | Batch playlist with crash recovery    | One failed track shouldn't abort the set    |
 | **Day 4** 🔴 | ⭐⭐     | Benchmark different models            | Learn which model works best for each genre |
 | **Day 5** 🔴 | ⭐       | "Live mode" settings (WAV output)     | Zero-generation loss for critical moments   |
 
 ### Progress Legend:
 
-- 🟡 Day 2: GPU status display - **in progress**
-- 🔴 Days 3-5: Not yet started
+- ✅ Day 2: GPU status display - **completed**
 
 ---
 
