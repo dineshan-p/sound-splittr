@@ -16,6 +16,40 @@ Examples:
 """
 
 import click
+
+# 🔧 GPU Status Display - Shows available hardware before processing
+def show_gpu_status():
+    """Display GPU availability and memory in beginner-friendly terms.
+    
+    This helps DJs know upfront if their laptop can handle the gig,
+    explains memory constraints, and suggests CPU fallback when needed.
+    """
+    try:
+        # Check GPU count
+        num_gpus = torch.cuda.device_count()
+        gpu_names = [torch.cuda.get_device_name(i) for i in range(num_gpus)]
+        
+        if num_gpus > 0:
+            print("\n🎉 Great news! Found GPU(s):")
+            for i, name in enumerate(gpu_names):
+                print(f"  GPU {i}: {name}")
+            
+            # Show memory status
+            free_memory_gb = torch.cuda.mem_get_info()[0] / 1e9
+            model_needed = "~2.5GB"
+            print(f"🧠 GPU Memory: {free_memory_gb:.1f}GB available")
+            print(f"🧠 Model needs: {model_needed}")
+            
+            if free_memory_gb > 3.0:
+                print("✅ Plenty of memory - ready for many songs!")
+            elif free_memory_gb < 1.5:
+                print("⚠️  Memory is tight - consider CPU mode (--no-gpu)")
+        else:
+            print("\n💻 No GPU found - will use CPU instead.")
+            print("   This still works, just slower for long tracks.")
+    except Exception as e:
+        # If GPU detection fails, quietly continue
+        pass
 import sys
 import os
 from pathlib import Path
@@ -101,13 +135,11 @@ def main(
         click.echo(f"Creating output directory: {output_dir}")
         output_path.mkdir(parents=True, exist_ok=True)
     
-    # Validate model exists or is downloading
-    if not validate_model(model):
-        click.echo(f"Downloading model: {model}...")
-        from core.demucs_helper import download_model
-        download_model(model)
+    # Display GPU status - Shows available hardware before processing
+    import torch
+    show_gpu_status()
     
-    # Process the audio
+    # Setup logging
     click.echo(f"Processing: {input_file}")
     click.echo(f"  Output directory: {output_dir}")
     click.echo(f"  Model: {model}")

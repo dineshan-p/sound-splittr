@@ -291,8 +291,8 @@ python src/cli/main.py --live-mode --input song.mp3 --output test_live/
 
 ## 📋 Quick Reference: What to Build This Week
 
-| Day       | Priority | Build                                 | Why it matters                              |
-| --------- | -------- | ------------------------------------- | ------------------------------------------- |
+| Day          | Priority | Build                                 | Why it matters                              |
+| ------------ | -------- | ------------------------------------- | ------------------------------------------- |
 | **Day 1** ✅ | ⭐⭐⭐   | Test core + create first tutorial doc | Verify functionality, understand basics     |
 | **Day 2** 🟡 | ⭐⭐⭐   | GPU status display in CLI             | Know your hardware before the gig           |
 | **Day 3** 🔴 | ⭐⭐⭐   | Batch playlist with crash recovery    | One failed track shouldn't abort the set    |
@@ -300,6 +300,7 @@ python src/cli/main.py --live-mode --input song.mp3 --output test_live/
 | **Day 5** 🔴 | ⭐       | "Live mode" settings (WAV output)     | Zero-generation loss for critical moments   |
 
 ### Progress Legend:
+
 - 🟡 Day 2: GPU status display - **in progress**
 - 🔴 Days 3-5: Not yet started
 
