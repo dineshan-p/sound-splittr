@@ -6,15 +6,15 @@ A Python-based audio stem splitter using Demucs to separate songs into vocals, d
 
 ## 📋 What Exists Currently
 
-| Component                      | Status                                     |
-| ------------------------------ | ------------------------------------------ |
-| Core splitting engine (Demucs) | ✅ Working                                 |
-| CLI command-line tool          | ✅ Working (`src/cli/main.py`)             |
-| Web interface (Streamlit)      | ✅ Ready (`web/streamlit_app.py`)          |
-| Unit tests                     | ✅ Implemented (`tests/unit/`)             |
-| Integration tests              | ✅ Implemented (`tests/integration/`)      |
-| Docker deployment files        | ❌ Empty directory (no `Dockerfile` yet)   |
-| Documentation/tutorials        | ❌ Empty `docs/` folder, no guides written |
+| Component                      | Status                                   |
+| ------------------------------ | ---------------------------------------- |
+| Core splitting engine (Demucs) | ✅ Working                               |
+| CLI command-line tool          | ✅ Working (`src/cli/main.py`)           |
+| Web interface (Streamlit)      | ✅ Ready (`streamlit_app.py`)            |
+| Unit tests                     | ✅ Implemented (`tests/unit/`)           |
+| Integration tests              | ✅ Implemented (`tests/integration/`)    |
+| Docker deployment files        | ❌ Empty directory (no `Dockerfile` yet) |
+| Documentation/tutorials        | ✅ Contains `roadmap-live-dj.md` (12KB)  |
 
 ---
 
@@ -47,7 +47,7 @@ cd tests && python ../demo_test.py
 ### Step 3: Run the Web Interface
 
 ```bash
-streamlit run web/streamlit_app.py
+streamlit run streamlit_app.py
 ```
 
 Opens at `http://localhost:8501` - drag and drop any song to split it.
@@ -82,18 +82,19 @@ sound_splittr/
 │   ├── conftest.py              # Shared pytest fixtures and helper generators
 │   └── fixtures/generate.py     # Creates sample audio files for testing
 │
-├── web/streamlit_app.py          # Streamlit-based web interface
+└── streamlit_app.py            # Streamlit-based web interface
 ├── config/config.yaml            # Configuration: model, output format, quality settings
 ├── demo.py                       # Standalone verification script (no audio file needed)
 ├── demo_test.py                  # Full test suite with detailed output
 ├── requirements.txt              # Python package dependencies
+├── AGENTS.md                     # Agent roles and project instructions
 └── .gitignore                    # Git ignore patterns for venv/, __pycache__, etc.
 ```
 
 **What's NOT in the project (yet):**
 
-- ❌ No `Dockerfile` or docker deployment files (docker/ directory is empty)
-- ❌ No tutorial guides, FAQs, or documentation (docs/ folder exists but is empty)
+- 📦 Docker deployment not yet set up (no docker/ directory exists)
+- 📚 Documentation in progress: `docs/roadmap-live-dj.md`
 - ❌ No example audio files (you can add these later if needed)
 
 ---

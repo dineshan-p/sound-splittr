@@ -22,7 +22,8 @@ import os
 from pathlib import Path
 
 from src.pipeline.process import process_audio_file
-from src.utils.format_duration import format_duration  # Import duration formatter
+from io import BytesIO  # For processing uploaded files in memory
+from src.utils import format_duration  # Import duration formatter from utils/__init__.py
 from src.utils.quality import validate_stem_quality  # Import quality checker
 
 
@@ -127,11 +128,11 @@ if uploaded_file is not None:
     
     # Show file preview
     with st.expander("📊 File Info"):
-        # Decode the file path
-        file_path = f"memory://{uploaded_file.getvalue()}"
+        # Create a BytesIO object from uploaded file data
+        memory_file = BytesIO(uploaded_file.getvalue())
         
-        # Get audio metadata without full processing
-        audio, sr, _ = load_audio_safe(file_path)
+        # Get audio metadata using torchaudio's internal function (exposed via sofoxies)
+        audio, sr, _ = load_audio_safe(memory_file)
         
         st.metric(
             "🕐 Duration",
@@ -161,9 +162,7 @@ if process_btn and uploaded_file is not None:
     # Decode uploaded file
     file_bytes = uploaded_file.getvalue()
     
-    # Create a BytesIO object
-    from io import BytesIO
-    memory_file = BytesIO(file_bytes)
+    
     
     # Process the audio
     with st.spinner("🔄 Separating stems..."):
@@ -219,11 +218,14 @@ if process_btn and uploaded_file is not None:
                 # Create audio player for each stem
                 create_audio_player(stem_path, stem_name.capitalize())
                 
-                st.downloadButton(
-                    f"⬇️ Download {stem_name}.mp3",
-                    data=open(stem_path, "rb"),
-                    file_name=f"{stem_name}.mp3"
-                )
+                # Use Streamlit's download_button() (correct API)
+                with open(stem_path, 'rb') as f:
+                    st.download_button(
+                        label=f"⬇️ Download {stem_name}.mp3",
+                        data=f,
+                        mime='audio/mpeg',
+                        file_name=f"{stem_name}.mp3"
+                    )
                 
                 st.divider()
                 
@@ -239,5 +241,3 @@ st.caption(
 )
 
 
-# Import needed function at top-level
-from torchaudio._backend.sofoxies import load_audio as load_audio_safe
