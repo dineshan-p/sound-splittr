@@ -1,154 +1,120 @@
 """
 Utility Functions
-===========
+=================
 
 Common helper functions used throughout the project.
 
-Why separate utilities:
-- Reusable functions
-- Keep main code clean
-- Easy to maintain
+Separated from core logic so they can be reused across:
+- CLI (src/cli/)
+- Web API (future src/api/)
+- Tests (tests/)
+- Any other consumer
 """
 
+from __future__ import annotations
+
 import os
-from typing import Tuple
+from pathlib import Path
 
 
 # =============================================================================
-# Audio Utilities
+# File / Path Utilities
 # =============================================================================
 
-def get_file_size(filepath: str) -> int:
-    """
-    Get file size in bytes.
-    
-    Why we need this:
-    - To show file sizes in progress displays
-    - To validate file integrity
-    - For disk space estimation
-    
-    Args:
-        filepath: Path to file
-        
-    Returns:
-        File size in bytes, or 0 if file doesn't exist
+def get_file_size(filepath: str | Path) -> int:
+    """Return file size in bytes, or 0 if the file does not exist.
+
+    Used by the CLI to report stem sizes and by tests to verify output.
     """
     try:
-        return os.path.getsize(filepath)
+        return os.path.getsize(str(filepath))
     except OSError:
         return 0
 
 
+def normalize_audio_path(path: str | Path) -> str:
+    """Return an absolute, normalised path.
+
+    Prevents subtle bugs caused by relative paths resolving differently
+    depending on the current working directory.
+    """
+    return os.path.abspath(str(path))
+
+
+# =============================================================================
+# Duration Formatting
+# =============================================================================
+
 def format_duration(seconds: float) -> str:
-    """
-    Format duration as readable string (HH:MM:SS or MM:SS).
-    
-    Why we need this:
-    - Users prefer human-readable times
-    - Shows song duration in UI
-    
+    """Format a duration in seconds as ``MM:SS`` or ``HH:MM:SS``.
+
+    Examples::
+
+        >>> format_duration(225.0)
+        '03:45'
+        >>> format_duration(7261.5)
+        '02:01:01'
+
     Args:
-        seconds: Duration in seconds
-        
+        seconds: Duration in fractional seconds.
+
     Returns:
-        Formatted string like "3:45" or "15:30:45"
+        Human-readable time string without leading zeros on hours when zero.
     """
-    hours, remainder = divmod(int(seconds), 3600)
-    minutes, seconds = divmod(remainder, 60)
-    
+    total = int(seconds)
+    hours, remainder = divmod(total, 3600)
+    minutes, secs = divmod(remainder, 60)
+
     if hours:
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-    else:
-        return f"{minutes:02d}:{seconds:02d}"  # Fixed: removed duplicate colon
-
-
-def normalize_audio_path(path: str) -> str:
-    """
-    Normalize file path and ensure it exists.
-    
-    Why we need this:
-    - Handle relative/absolute paths consistently
-    - Prevent path traversal issues
-    - Create directories if they don't exist
-    
-    Args:
-        path: File or directory path
-        
-    Returns:
-        Normalized absolute path
-    """
-    return os.path.abspath(path)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+    return f"{minutes:02d}:{secs:02d}"
 
 
 # =============================================================================
-# Demucs Utilities
+# Demucs Model Utilities
 # =============================================================================
 
-def validate_demucs_model_path(model_path: str) -> bool:
+def validate_demucs_model_path(model_path: str | Path) -> bool:
+    """Check whether a file exists at the given path.
+
+    In production this could also verify the model is loadable by Demucs,
+    but for now we just check existence to avoid cryptic errors later.
     """
-    Validate that a Demucs model exists at the given path.
-    
-    Why we need this:
-    - Check if model downloaded successfully
-    - Prevent runtime errors from missing models
-    - Show helpful error messages
-    
-    Args:
-        model_path: Path to model file
-        
-    Returns:
-        True if model exists, False otherwise
-    """
-    return os.path.exists(model_path)
+    return os.path.exists(str(model_path))
 
 
-def get_available_models() -> list:
+def get_available_models() -> list[str]:
+    """Return a sorted list of known Demucs model identifiers.
+
+    This is the canonical set – if you add support for a new model,
+    update this function and the CLI ``--model`` choice.
     """
-    List available Demucs models in the models directory.
-    
-    Why we need this:
-    - Show user what models are available
-    - Help user choose appropriate model
-    - Display in web interface
-    
-    Returns:
-        List of model filenames
-    """
-    models_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models")
-    models = []
-    
-    try:
-        models = [f for f in os.listdir(models_dir) if os.path.isfile(os.path.join(models_dir, f))]
-    except ( FileNotFoundError, PermissionError ):
-        pass
-    
-    return sorted(models)
+    return [
+        "htdemucs",
+        "mdxdemucs",
+        "htdemucs_6s",
+    ]
 
 
-# =============================================================================
-# Output Utilities
-# =============================================================================
+def get_stem_output_names() -> dict[str, str]:
+    """Return the standard mapping of stem names to display labels.
 
-def get_stem_output_names(stem_names: list) -> dict:
+    Returns::
+
+        {
+            'vocals':  'Vocals',
+            'drums':   'Drums',
+            'bass':    'Bass',
+            'other':   'Other / Melody',
+        }
     """
-    Map stem names to their output directories.
-    
-    Why we need this:
-    - Organize stems in different folders
-    - Easy cleanup of processed files
-    - Support custom naming schemes
-    
-    Args:
-        stem_names: List of stem names like ['vocals', 'drums', 'bass', 'other']
-        
-    Returns:
-        Dictionary mapping stem names to folders
-    """
-    # Standard naming scheme
     return {
-        'vocals': 'stems/vocals',
-        'drums': 'stems/drums', 
-        'bass': 'stems/bass',
-        'other': 'stems/other',
-        'melody': 'stems/melody'
+        "vocals": "Vocals",
+        "drums": "Drums",
+        "bass": "Bass",
+        "other": "Other / Melody",
     }
+
+
+if __name__ == "__main__":
+    print("Utils module loaded.")

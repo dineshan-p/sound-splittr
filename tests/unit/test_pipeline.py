@@ -1,82 +1,82 @@
 """
 Unit Tests for Pipeline Functionality
-=======================
+======================================
 
-Test the main audio processing pipeline.
+Tests that verify process_audio_file has the expected signature and behaviour
+with synthetic (non-existent) input files.  No GPU or real audio required.
 
-Why it matters:
-- Test that the pipeline function returns correct structure
-- Verify audio processing flow
+Run with::
+
+    pytest tests/unit/test_pipeline.py -v
 """
 
-import os
+from __future__ import annotations
+
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+import inspect
+from pathlib import Path
+
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 
-def test_process_function_exists():
-    """Test that process_pipeline function exists."""
-    try:
-        from pipeline.process import process_audio_file
-        assert callable(process_audio_file), "process_audio_file should be callable"
-    except ImportError as e:
-        pytest.skip(f"Import error: {e}")
+class TestProcessAudioFileSignature:
+    """Verify process_audio_file has the expected parameters."""
+
+    def test_function_exists(self):
+        from src.pipeline.process import process_audio_file
+
+        assert callable(process_audio_file), "process_audio_file must be callable"
+
+    def test_has_required_parameters(self):
+        from src.pipeline.process import process_audio_file
+
+        sig = inspect.signature(process_audio_file)
+        params = list(sig.parameters.keys())
+
+        # Core parameters that callers depend on
+        assert "input_file" in params, "Must accept input_file argument"
+        assert "output_dir" in params, "Must accept output_dir argument"
+        assert "model_name" in params, "Must accept model_name argument"
+        assert "device" in params, "Must accept device argument"
+
+    def test_default_output_format(self):
+        from src.pipeline.process import process_audio_file
+
+        sig = inspect.signature(process_audio_file)
+        fmt_param = sig.parameters.get("format")
+
+        assert fmt_param is not None, "format parameter should exist"
+        # Default should be 'mp3' per the project config
+        assert str(fmt_param.default) == "mp3", f"Default format should be 'mp3', got {fmt_param.default!r}"
 
 
-def test_process_returns_dict():
-    """Test that process function returns proper structure."""
-    try:
-        from pipeline.process import process_audio_file
-        sig = inspect_signature(process_audio_file)
-        
-        # Check that it accepts input_file and output_dir
-        params = get_function_parameters(process_audio_file)
-        
-        # These parameters should exist if function is available
-        # Note: function signature check is just a smoke test
-        assert callable(process_audio_file)
-    except (ImportError, AttributeError):
-        pytest.skip("Pipeline module not available yet")
+class TestProcessAudioFileRaisesOnMissingInput:
+    """Verify process_audio_file raises FileNotFoundError for missing input."""
 
+    def test_missing_input_raises(self):
+        from src.pipeline.process import process_audio_file
 
-def inspect_signature(func):
-    """Inspect function signature for tests."""
-    try:
-        import inspect
-        return inspect.signature(func)
-    except Exception:
-        return None
-
-
-def get_function_parameters(func):
-    """Get function parameters for validation."""
-    try:
-        import inspect
-        sig = inspect.signature(func)
-        return sig.parameters
-    except Exception:
-        return None
-
-
-def test_pipeline_import_success():
-    """Test that pipeline modules can be imported."""
-    try:
-        # Import individual components to verify they work
         try:
-            from pipeline.process import process_audio_file
-        except ImportError as e:
-            # This is expected during early development
-            pytest.skip(f"Pipeline import error: {e}")
-        
-        from utils import get_file_size
-    except ImportError as e:
-        pytest.skip(f"Import error: {e}")
+            process_audio_file(
+                input_file="/nonexistent/path/song.mp3",
+                output_dir="./test_output_placeholder",
+            )
+        except FileNotFoundError:
+            return  # Expected – test passes
+        except ImportError as exc:
+            # If demucs isn't installed yet, that's fine for this smoke test
+            assert "demucs" in str(exc).lower() or "torch" in str(exc).lower()
+            return
+
+        raise AssertionError("Expected FileNotFoundError was not raised")
 
 
-if __name__ == "__main__":
-    import sys
-    print("Running pipeline tests...")
-    test_process_function_exists()
-    test_process_returns_dict()
-    test_pipeline_import_success()
-    print("Pipeline tests completed!")
+class TestPipelineModuleStructure:
+    """Verify the pipeline module has expected exports."""
+
+    def test_get_dems_model_exists(self):
+        from src.pipeline.process import get_dems_model
+
+        assert callable(get_dems_model)

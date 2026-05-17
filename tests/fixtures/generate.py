@@ -1,117 +1,140 @@
 """
-Test Data Generator
-===================
+Test Audio File Generator
+==========================
 
-Generate synthetic audio files for testing without needing real music downloads.
+Creates synthetic WAV files for unit/integration tests.  No real music
+download needed – every file contains a deterministic sine wave so the
+output is always reproducible.
 
-Why this matters:
-- Creates diverse test files (different lengths, sample rates)
-- Ensures tests work without external audio sources
-- Documents expected behavior with known inputs
+Usage::
 
-How we create synthetic audio:
-- Use pure Python (no external audio libraries needed initially)
-- Create random noise with controlled patterns
-- Save as WAV for easy testing
+    python tests/fixtures/generate.py          # generates all fixtures
+    python -c "from fixtures.generate import generate_sine; print(generate_sine('/tmp/test.wav', 440, 2))"
+
+File format:
+- WAV (PCM 16-bit) – portable and easy for soundfile to read/write
+- Duration ≤ 5 s per file so tests stay fast
 """
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+from typing import List, Tuple
 
 import numpy as np
 import soundfile as sf
-from pathlib import Path
 
 
-def generate_test_audio_files() -> list:
-    """
-    Generate synthetic test audio files with known characteristics.
-    
-    Why we generate synthetic audio:
-    - Don't need to download real songs
-    - Each file has known properties for testing
-    - Covers different audio scenarios
-    
-    Returns:
-        List of created file paths
-    """
-    files_created = []
-    
-    synth_dir = Path("/home/kobe/brain_2/projects/stem_splitter/tests/fixtures/wav")
-    synth_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Scenario 1: Simple sine wave (very simple audio)
-    create_synthetic_file(
-        synth_dir / "simple_tone.wav",
-        frequency=440,       # A4 note
-        duration=3.0,        # 3 seconds
-        amplitude=1.0,       # Full volume
-        sample_rate=44100
-    )
-    files_created.append(("simple_tone.wav", "Simple 440Hz sine wave, 3 sec"))
-    
-    # Scenario 2: Noise with multiple frequencies
-    create_synthetic_file(
-        synth_dir / "complex_wave.wav",
-        frequencies=[220, 330, 440, 880],  # Multiple tones
-        duration=5.0,
-        amplitude=0.7,
-        sample_rate=44100
-    )
-    files_created.append(("complex_wave.wav", "Multiple frequencies, 5 sec"))
-    
-    # Scenario 3: Longer track
-    create_synthetic_file(
-        synth_dir / "long_track.wav",
-        frequency=523,       # C5 note
-        duration=30.0,       # 30 seconds
-        amplitude=0.5,
-        sample_rate=44100
-    )
-    files_created.append(("long_track.wav", "1 minute tone track"))
-    
-    files_created.append(("simple_tone.wav", "Simple 440Hz sine wave, 3 sec"))
-    files_created.append(("complex_wave.wav", "Multiple frequencies, 5 sec"))
-    files_created.append(("long_track.wav", "30 second tone track"))
-    
-    return files_created
+# Directory where generated files will live.
+FIXTURES_DIR = Path(__file__).resolve().parent / "wav"
 
 
-def create_synthetic_file(
-    filepath,                    # Path to save file
-    frequency=440,              # Base frequency in Hz
-    duration=3.0,               # Duration in seconds
-    amplitude=1.0,              # Audio amplitude (0-1)
-    sample_rate=44100           # Sample rate
-) -> str:
-    """
-    Generate synthetic audio file with specified parameters.
-    
-    Why we need this:
-    - Create test files without external audio
-    - Each file has predictable, known content
-    - Covers different audio characteristics
-    
+def generate_sine(
+    filepath: str | Path,
+    frequency: float = 440.0,
+    duration: float = 3.0,
+    sample_rate: int = 44100,
+) -> Path:
+    """Generate a simple sine wave and save it as WAV.
+
     Args:
-        filepath: Where to save the generated audio
-        frequency: Base frequency (pitch)
-        duration: How long the audio is
-        amplitude: Volume level (1.0 = max)
-        sample_rate: Sample rate for audio creation
-        
+        filepath: Where to write the file (``.wav`` extension added if missing).
+        frequency: Pitch in Hz (e.g. 440 = A4).
+        duration: Length in seconds.
+        sample_rate: Samples per second.
+
     Returns:
-        Path to created file
+        Path to the created file.
     """
-    # Generate time array
-    t = np.linspace(0, duration, int(sample_rate * duration), False)
-    
-    # Create simple waveform
-    waveform = np.sin(2 * np.pi * frequency * t)
-    
-    # Apply amplitude and save
-    sample_data = waveform * amplitude
-    
-    # Save to WAV file
-    sf.write(filepath, sample_data, sample_rate)
-    
-    print(f"Created synthetic file: {filepath}")
-    print(f"  Duration: {duration}s, Frequency: {frequency}Hz, Amplitude: {amplitude}")
-    
-    return str(filepath)
+    fp = Path(filepath)
+    if fp.suffix.lower() != ".wav":
+        fp = fp.with_suffix(".wav")
+    fp.parent.mkdir(parents=True, exist_ok=True)
+
+    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+    waveform = (np.sin(2 * np.pi * frequency * t) * 0.8).astype(np.float32)
+
+    sf.write(str(fp), waveform, sample_rate, subtype="PCM_16")
+    print(f"  ✓ {fp.name} ({duration:.1f}s @ {frequency:.0f}Hz)")
+    return fp
+
+
+def generate_noise(
+    filepath: str | Path,
+    duration: float = 3.0,
+    sample_rate: int = 44100,
+) -> Path:
+    """Generate white noise and save as WAV."""
+    fp = Path(filepath).with_suffix(".wav")
+    fp.parent.mkdir(parents=True, exist_ok=True)
+
+    data = (np.random.randn(int(sample_rate * duration)) * 0.3).astype(np.float32)
+    sf.write(str(fp), data, sample_rate, subtype="PCM_16")
+    print(f"  ✓ {fp.name} ({duration:.1f}s noise)")
+    return fp
+
+
+def generate_stereo(
+    filepath: str | Path,
+    freq_left: float = 440.0,
+    freq_right: float = 523.0,
+    duration: float = 3.0,
+) -> Path:
+    """Generate a stereo file with different tones in each channel."""
+    fp = Path(filepath).with_suffix(".wav")
+    fp.parent.mkdir(parents=True, exist_ok=True)
+
+    sr = 44100
+    t = np.linspace(0, duration, int(sr * duration), endpoint=False)
+    left = (np.sin(2 * np.pi * freq_left * t) * 0.5).astype(np.float32)
+    right = (np.sin(2 * np.pi * freq_right * t) * 0.5).astype(np.float32)
+    stereo = np.stack([left, right], axis=-1)
+
+    sf.write(str(fp), stereo, sr, subtype="PCM_16")
+    print(f"  ✓ {fp.name} (stereo L={freq_left:.0f}R={freq_right:.0f})")
+    return fp
+
+
+def generate_all() -> List[Tuple[str, str]]:
+    """Generate every test fixture file.
+
+    Returns:
+        List of ``(filename, description)`` tuples for reporting.
+    """
+    FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
+
+    files = [
+        ("simple_tone.wav", "440 Hz sine wave, 3 s"),
+        ("complex_wave.wav", "Multiple frequencies mixed, 3 s"),
+        ("stereo_test.wav", "Different tones in L/R channels, 3 s"),
+        ("noise_sample.wav", "White noise, 2 s (edge case)"),
+    ]
+
+    print(f"\nGenerating test fixtures in {FIXTURES_DIR}:\n")
+
+    generate_sine(FIXTURES_DIR / "simple_tone.wav", frequency=440.0, duration=3.0)
+    # Complex wave: sum of multiple frequencies
+    fp = FIXTURES_DIR / "complex_wave.wav"
+    sr = 44100
+    t = np.linspace(0, 3, int(sr * 3), endpoint=False)
+    waveform = (np.sin(2 * np.pi * 220 * t) +
+                np.sin(2 * np.pi * 330 * t) +
+                np.sin(2 * np.pi * 440 * t) +
+                np.sin(2 * np.pi * 880 * t)) * 0.2
+    sf.write(str(fp), waveform.astype(np.float32), sr, subtype="PCM_16")
+    print(f"  ✓ {fp.name} (multiple frequencies)")
+
+    generate_stereo(FIXTURES_DIR / "stereo_test.wav", freq_left=440, freq_right=523)
+    generate_noise(FIXTURES_DIR / "noise_sample.wav", duration=2.0)
+
+    print(f"\n✅ {len(files)} fixture files created in {FIXTURES_DIR}\n")
+    # Return list of (filename_string, description)
+    result: List[Tuple[str, str]] = []
+    for fname, desc in files:
+        result.append((Path(fname).name, desc))
+    return result
+
+
+if __name__ == "__main__":
+    generate_all()

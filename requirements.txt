@@ -17,8 +17,8 @@ python-dotenv>=1.0.0
 # GPU support (optional but recommended for live DJ)
 torch>=2.5.1
 torchaudio>=2.5.1
-# Web interface (optional, included by default)
-streamlit>=1.38.0
+# Audio resampling & spectral analysis
+scipy>=1.12.0
 # CLI framework
 click>=8.1.7
 # Testing / quality assurance

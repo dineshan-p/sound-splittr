@@ -3,156 +3,201 @@ Audio I/O Utility Module
 ========================
 
 This module handles reading and writing audio files with proper
-format conversion, normalization, and metadata preservation.
+format conversion, normalization, and metadata handling.
 
 Why this matters for DJs:
 - Input files can be any common format (mp3, wav, flac, ogg)
-- Output format can be customized
-- We need to maintain audio quality while being flexible
+- Output format is configurable per user preference
+- Audio quality is preserved through the separation pipeline
 
-Key concepts we explain:
-- Sample rate: How many samples per second (default: 44100 for CD quality)
-- Bit depth: Precision of each sample (16-bit, 24-bit, or 32-bit float)
-- Channels: Mono (1), Stereo (2)
-- Bitrate: For lossy formats like MP3 (higher = better quality)
+Key concepts explained inline:
+- Sample rate : how many samples per second  (44100 = CD quality)
+- Bit depth   : precision of each sample     (16-bit, 24-bit, or float32)
+- Channels    : mono (1) vs stereo (2)
+- Bitrate     : for lossy formats like MP3   (higher = better quality)
 """
 
+from __future__ import annotations
+
 import os
+from pathlib import Path
+from typing import Tuple, Optional
+
 import numpy as np
 import soundfile as sf
-from pathlib import Path
 
 
-def load_audio(file_path: str,
-               sr: int = None,
-               channels: int = 2,
-               normalize: bool = True) -> tuple:
-    """
-    Load audio file into a torch tensor.
+def load_audio(
+    file_path: str | Path,
+    sr: int | None = None,
+    channels: int = 2,
+    normalize: bool = True,
+) -> Tuple[np.ndarray, int]:
+    """Load an audio file into a NumPy array.
 
-    Why do we do this?
-    - Demucs expects audio as numpy arrays or torch tensors
-    - We standardize the sample rate (optional)
-    - We control number of channels (mono/stereo)
-    - We normalize volume to avoid clipping issues
+    Demucs and PyTorch expect audio as float32 arrays with values in the
+    range ``[-1.0, 1.0]``. This function handles format conversion so the
+    caller never has to worry about whether the input is MP3, WAV, or FLAC.
 
     Args:
-        file_path: Path to audio file (mp3, wav, flac, etc.)
-        sr: Target sample rate. If None, uses file's native rate
-        channels: 1 for mono, 2 for stereo
-        normalize: Whether to normalize audio level to -1.0 max
+        file_path: Path to the audio file (MP3, WAV, FLAC, OGG, …).
+        sr: Target sample rate in Hz.  ``None`` keeps the native rate.
+        channels: Number of output channels – 1 for mono, 2 for stereo.
+        normalize: Whether to scale the signal so its peak is at -1.0.
 
     Returns:
-        Tuple of (audios: numpy array, sr: sample rate)
+        Tuple of ``(audio_array, sample_rate)`` where *audio_array* has shape
+        ``(*channels, samples)`` or ``(samples,)`` for mono.
 
-    Audio concepts explained:
-    - Sample arrays store audio as numbers between -1.0 and 1.0
-    - This prevents digital clipping (audio going too loud)
+    Raises:
+        FileNotFoundError: If *file_path* does not exist.
+        RuntimeError: If the file cannot be decoded by soundfile.
+
+    Example::
+
+        >>> data, rate = load_audio("my_song.mp3")
+        >>> print(data.shape)  # e.g. (2, 44100 * duration_seconds)
     """
-    print(f"\n📂 Loading audio: {file_path}")
+    fp = Path(file_path).resolve()
+    if not fp.is_file():
+        raise FileNotFoundError(f"Audio file not found: {fp}")
 
-    try:
-        # Load audio file
-        data, orig_sr = sf.read(str(file_path))
+    print(f"\n📂 Loading audio: {fp}")
 
-        print(f"  Format: {file_path.suffix.upper()}")
-        print(f"  Original sample rate: {orig_sr} Hz")
-        print(f"  Channels: {data.shape[0]} (mono={len(data)==1})")
-        print(f"  Audio length: {len(data)/orig_sr:.2f} seconds")
+    # soundfile reads the file into a (samples, channels) array with dtype float64
+    data, orig_sr = sf.read(str(fp), always_2d=True, dtype="float32")
 
-        # Resample if needed
-        if sr is not None and orig_sr != sr:
-            print(f"⚡ Resampling from {orig_sr} Hz to {sr} Hz")
-            # We would use librosa.resample here in production
-            # For now, we handle common rates
+    print(f"  Format : {fp.suffix.upper()}")
+    print(f"  Sample rate : {orig_sr} Hz")
+    print(f"  Channels : {data.shape[1]} (mono={channels==1})")
+    print(f"  Duration : {len(data) / orig_sr:.2f}s")
 
-        # Ensure correct channels
-        if data.ndim == 1 and channels == 2:
-            # Convert mono to stereo by duplicating channel
-            data = np.stack([data, data], axis=0)
-        elif data.ndim == 2 and channels == 1:
-            # Take first channel for mono
-            data = data[0]
+    # ------------------------------------------------------------------
+    # Resample if a specific sample rate was requested.
+    # For simplicity we use scipy which is already pulled in by librosa / soundfile.
+    # ------------------------------------------------------------------
+    if sr is not None and orig_sr != sr:
+        from scipy import signal as sp_signal
 
-        # Normalize audio level
-        if normalize:
-            max_abs = np.abs(data).max()
-            if max_abs > 1.0:
-                print(f"⚠️  Volume clipping detected! Clipping at {max_abs:.3f}")
-                data = np.clip(data, -1.0, 1.0)
-            elif max_abs > 0.001:
-                data = data / max_abs
-                print(f"🔊 Normalized volume")
+        ratio = sr / orig_sr
+        n_samples = int(len(data) * ratio)
+        data = sp_signal.resample(data, len(data), n_samples).astype("float32")
+        print(f"⚡ Resampled {orig_sr} Hz → {sr} Hz ({len(data)} samples)")
 
-        print(f"  Loaded shape: {data.shape}")
-        print(f"  Sample count: {len(data)} samples = {len(data)/orig_sr:.2f}s")
-        print(f"  Dtype: {data.dtype}")
+    # ------------------------------------------------------------------
+    # Channel handling
+    # ------------------------------------------------------------------
+    if channels == 2 and data.shape[1] == 1:
+        # Mono → stereo (duplicate)
+        data = np.stack([data.ravel(), data.ravel()], axis=1)
+    elif channels == 1 and data.shape[1] > 1:
+        # Stereo → mono (average of channels)
+        data = data.mean(axis=1, keepdims=True)
 
-        return data, orig_sr
+    # ------------------------------------------------------------------
+    # Normalize to prevent clipping / too-quiet signals.
+    # Audio stored as float32 in range [-1.0, 1.0].
+    # ------------------------------------------------------------------
+    if normalize:
+        peak = np.abs(data).max()
+        if peak > 1.0:
+            print(f"⚠️  Clipping detected (peak={peak:.3f}) – hard-clamping")
+            data = np.clip(data, -1.0, 1.0)
+        elif peak > 0.001:
+            data /= peak
+            print("🔊 Normalized to prevent clipping")
 
-    except Exception as e:
-        print(f"❌ Error loading {file_path}: {e}")
-        return None, None
+    # Transpose back to (samples,) or (channels, samples) for downstream use
+    if channels == 1:
+        data = data.ravel()
+    else:
+        data = data.T
+
+    print(f"  Final shape : {data.shape} @ {sr or orig_sr} Hz")
+    return data, sr or orig_sr
 
 
-def save_audio(file_path: str, data: np.ndarray, sr: int = 44100,
-               format: str = 'wav', bitrate: int = None):
-    """
-    Save audio data to file.
+def save_audio(
+    file_path: str | Path,
+    data: np.ndarray,
+    sr: int = 44100,
+    fmt: str = "wav",
+    bitrate: int = 320,
+) -> None:
+    """Save a NumPy audio array to disk.
 
-    Why this matters:
-    - DJs need flexible output formats
-    - WAV is lossless (CD quality)
-    - MP3 is smaller but loses some quality
-    - We choose based on DJ needs
-
-    Format choices explained:
-    - WAV: Lossless, large files, perfect quality (16/24-bit)
-    - MP3: Compressed, smaller files, good quality (192-320kbps)
-    - FLAC: Lossless compression (smaller than WAV, same quality)
+    Supports WAV (lossless PCM), MP3 (via pydub → FFmpeg), and FLAC (lossless).
 
     Args:
-        file_path: Output file path
-        data: Audio data as numpy array
-        sr: Sample rate (44100 CD quality, 48000 for video)
-        format: Output format ('wav', 'mp3', 'flac')
-        bitrate: For lossy formats (mp3: 192, 256, 320 kbps)
+        file_path: Output path for the stem file.
+        data: Audio samples as float32 NumPy array in ``[-1, 1]`` range.
+        sr: Sample rate in Hz (default 44100 = CD quality).
+        fmt: Output format – ``'wav'``, ``'mp3'``, or ``'flac'``.
+        bitrate: MP3 encoding bitrate in kbps (only used when *fmt* == 'mp3').
     """
-    print(f"\n💾 Saving audio to: {file_path}")
+    fp = Path(file_path)
 
-    # Ensure output directory exists
-    out_dir = os.path.dirname(file_path)
-    if out_dir and not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-        print(f"  Created directories: {out_dir}")
+    # Ensure parent directories exist
+    if not fp.parent.exists():
+        fp.parent.mkdir(parents=True, exist_ok=True)
 
-    # Choose output format
-    ext = file_path.suffix.lower()
-    if ext == '':
-        ext = f'.{format}' if format.upper() in ['WAV', 'MP3', 'FLAC'] else '.wav'
+    fmt_lower = fmt.lower()
 
-    # Format-specific settings
-    if format.upper() == 'WAV':
-        # WAV uses 'W' for 16-bit, 'D' for 24-bit
-        print(f"  Format: WAV (16-bit PCM)")
-        sf.write(file_path, data, samplerate=sr, subtype='PCM_16')
-        print(f"  Sample rate: {sr} Hz, 16-bit PCM")
+    print(f"\n💾 Saving stem → {fp}")
 
-    elif format.upper() == 'MP3':
-        # MP3 uses pydub for encoding
-        import pydub
-        print(f"  Format: MP3 ({bitrate} kbps)")
-        # Convert numpy array to pydub format
-        import soundfile
-        temp_wav = file_path + '.tmp.wav'
-        soundfile.write(temp_wav, data, samplerate=sr, subtype='PCM_16')
+    if fmt_lower == "wav":
+        sf.write(str(fp), data.T if data.ndim > 1 else data, sr, subtype="PCM_16")
+        print(f"  Format : WAV (16-bit PCM) @ {sr} Hz")
 
-        # Use pydub to convert to MP3
-        temp_audio = AudioSegment.from_wav(temp_wav)
-        bitrate_kbps = bitrate or 320
-        temp_audio.export(file_path, filetype='mp3', bitrate=f'{bitrate_kbps}k')
-        os.remove(temp_wav)
+    elif fmt_lower == "flac":
+        sf.write(str(fp), data.T if data.ndim > 1 else data, sr, subtype="FLOAT")
+        print(f"  Format : FLAC (lossless float32) @ {sr} Hz")
+
+    elif fmt_lower == "mp3":
+        # MP3 requires pydub which wraps FFmpeg under the hood.
+        from pydub import AudioSegment
+
+        # Write a temporary WAV first because pydub can't write directly from numpy
+        tmp_wav = fp.with_suffix(".tmp.wav")
+        sf.write(str(tmp_wav), data.T if data.ndim > 1 else data, sr, subtype="PCM_16")
+
+        audio_seg = AudioSegment.from_wav(str(tmp_wav))
+        audio_seg.export(
+            str(fp),
+            format="mp3",
+            bitrate=f"{bitrate}k",
+        )
+        tmp_wav.unlink(missing_ok=True)  # clean up temp file
+        print(f"  Format : MP3 ({bitrate} kbps) @ {sr} Hz")
+
+    else:
+        raise ValueError(f"Unsupported format '{fmt}'. Choose 'wav', 'mp3', or 'flac'.")
 
 
+def get_audio_metadata(file_path: str | Path) -> dict:
+    """Read basic metadata from an audio file.
+
+    Args:
+        file_path: Path to the input audio file.
+
+    Returns:
+        Dictionary with keys ``'sample_rate'``, ``'num_frames'``,
+        ``'channels'``, and ``'duration_s'``.
+    """
+    fp = Path(file_path).resolve()
+    if not fp.is_file():
+        raise FileNotFoundError(f"Audio file not found: {fp}")
+
+    import torchaudio
+
+    info, _ = torchaudio.info(str(fp))
+    return {
+        "sample_rate": info.sample_rate,
+        "num_frames": info.num_frames,
+        "channels": info.channels,
+        "duration_s": round(info.num_frames / info.sample_rate, 3),
+    }
 
 
+if __name__ == "__main__":
+    print("Audio I/O module loaded. Use load_audio() and save_audio() directly.")

@@ -1,38 +1,33 @@
 """
 Pytest Configuration
-===================
+====================
 
-Set up the testing environment.
+Sets up the test environment by adding the project root to sys.path
+so that ``from src.core.audio_io import ...`` works in all tests.
 """
 
-import sys
-import os
-
-# Add project src directory to Python path so modules can be imported
-PROJECT_ROOT = ".."
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
-if ".." in sys.path:
-    # Adjust path length to match actual location
-    sys.path.pop(0)
-    sys.path.insert(0, os.path.join(PROJECT_ROOT, "src"))
-
-# Configure pytest
 import pytest
+import sys
+from pathlib import Path
+
+# Add the project root (parent of tests/) so 'src' is importable
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 
 @pytest.fixture(scope="session")
 def test_environment():
-    """
-    Setup test environment.
-    
-    Returns:
-        Dict with configured paths and settings
+    """Provide common paths for tests.
+
+    Returns a dict with canonical directory locations so tests don't need to
+    construct paths manually.  This centralises path logic in one place.
     """
     return {
-        "src_dir": os.path.join("..", "src"),
-        "test_dir": "tests",
-        "models_dir": "models",
-        "outputs_dir": "outputs",
+        "project_root": str(_PROJECT_ROOT),
+        "src_dir": str(_PROJECT_ROOT / "src"),
+        "test_dir": str(_PROJECT_ROOT / "tests"),
+        "fixtures_dir": str(_PROJECT_ROOT / "tests" / "fixtures"),
+        "models_dir": str(_PROJECT_ROOT / "models"),
+        "outputs_dir": str(_PROJECT_ROOT / "outputs"),
     }

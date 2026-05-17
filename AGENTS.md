@@ -53,11 +53,10 @@ Since you're new to stem splitters, our goal is to build and understand the tool
 
 - **Responsibilities**: Build intuitive user interfaces (web or CLI)
 - **Tasks**:
-  - Design simple Streamlit web interface (easier for beginners)
-  - OR terminal UI with clear prompts and explanations
-  - Create file drag-and-drop with upload feedback
+  - Maintain and improve the Click-based CLI tool
+  - Plan Angular web interface for drag-and-drop uploads
+  - Design REST API endpoints for future frontend consumption
   - Show processing status in real-time with explanations
-  - Build download UI for stem files
 
 ### 5. QA Tester [@qa] - "The Quality Checker"
 
@@ -182,11 +181,10 @@ def load_audio(file):
    - Simple processing pipeline
    - Comment every audio operation
 
-3. **Minimal UI** (Frontend + Backend)
-   - Basic Streamlit or CLI interface
-   - File upload
-   - Download stem results
-   - Simple "status" display
+3. **CLI Interface** (Frontend + Backend)
+   - Click-based command-line tool with progress output
+   - Dry-run mode for validation before processing
+   - GPU status detection and reporting
 
 **End Goal**: Upload song → Get stems in 5 minutes → Download all stems
 
@@ -246,19 +244,19 @@ def load_audio(file):
 
 - **Python 3.10+**: Easy to learn, lots of resources
 - **demucs**: Audio separation (handles the hard work)
-- **librosa/torchaudio**: Audio processing tools
-- **streamlit**: Web UI (simple Python-based)
+- **scipy**: Audio resampling & spectral analysis
+- **click**: CLI framework (command-line interface)
 
 ### Why These?
 
 - Python is great for beginners - lots of tutorials
 - Demucs handles the complex audio AI stuff
-- Streamlit means UI = just Python (no separate HTML/CSS)
+- Click provides a robust, well-documented CLI
 
-### Optional Advanced Stack
+### Optional / Planned Stack
 
-- **FastAPI**: For REST API endpoints
-- **React**: If we want custom UI later
+- **FastAPI**: For REST API endpoints (backend for Angular)
+- **Angular**: Web frontend (planned, replacing Streamlit)
 - **Docker**: For consistent environments
 
 ---
@@ -277,22 +275,15 @@ stem_splitter/
 │   ├── core/                 # Core audio processing
 │   │   ├── __init__.py
 │   │   ├── demucs_helper.py  # Demucs integration (heavily commented)
-│   │   ├── audio_io.py       # File I/O (explained)
-│   │   └── quality.py        # Quality metrics
+│   │   └── audio_io.py       # File I/O with soundfile/pydub (explained)
 │   ├── pipeline/             # Processing pipeline
 │   │   ├── __init__.py
 │   │   └── process.py        # Main processing function
-│   ├── ui/                   # User interface
-│   │   ├── __init__.py
-│   │   ├── streamlit/
-│   │   │   ├── app.py        # Web UI (beginner-friendly)
-│   │   │   └── components/   # UI components
-│   │   └── cli/              # CLI interface (alternative)
-│   │       └── main.py       # Command line interface
+│   ├── cli/                  # CLI interface (Click-based)
+│   │   └── main.py           # Command line interface
 │   └── utils/                # Utilities
-│       ├── __init__.py
-│       ├── config.py         # Configuration (easy to customize)
-│       └── logging.py        # Logging setup
+│       ├── __init__.py       # Common helpers (format_duration, file size)
+│       └── quality.py        # Quality metrics
 │
 ├── app/                      # Demucs models cache
 │   └── models/
@@ -330,17 +321,13 @@ stem_splitter/
 **Contents**: Installation, usage examples, troubleshooting  
 **Style**: Conversational, assumes no prior knowledge
 
-#### src/core/demucs_helper.py
+#### src/cli/main.py
 
-**What**: Integrates Demucs library  
-**Why**: Main audio separation logic  
-**Comments**: Every line explained, including why we use each function
+**What**: Click-based CLI tool
+**Why**: Primary user interface for splitting audio files from terminal
+**Features**: GPU detection, dry-run mode, verbose output, format/bitrate options
 
-#### src/ui/streamlit/app.py
 
-**What**: Web interface  
-**Why**: Easy to use browser interface  
-**Style**: Streamlit = Python UI (no separate HTML/CSS to learn)
 
 #### requirements.txt
 
@@ -384,7 +371,7 @@ Before we begin:
 
 1. Review this AGENTS.md and project plan
 2. Discuss what features you care about most
-3. Decide: web UI (Streamlit) or CLI?
+3. Plan the Angular frontend architecture
 4. Set up development environment together
 
 Let me know if you have questions about any section!

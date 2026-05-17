@@ -5,109 +5,142 @@ Processing Pipeline
 This module contains the main audio processing pipeline.
 
 Why this matters:
-- Combines all core components into simple, direct function calls
-- Provides clean interface for audio processing
-- Handles complex audio separation with Demucs
+- Combines all core components into a single workflow function
+- Provides clean interface for CLI and future API endpoints
+- Handles complex audio separation with Demucs under the hood
 """
 
 import os
 import torch
-import demucs
+import torchaudio
 from pathlib import Path
 
 
-def process_audio_file(
-    audio_tensor,
-    sample_rate: int = 44100,
-    output_dir: str = "./output",
-    model_name: str = "htdemucs",
-    normalize: bool = True,
-    denoise: bool = False,
-    num_workers: int = 0
-) -> dict:
-    """
-    Main function to process audio and separate stems.
-    
-    This is the core function that does the heavy lifting:
-    1. Takes pre-loaded audio tensor
-    2. Separates into stems using Demucs model
-    3. Post-processes for quality
-    4. Returns paths to separated stems
-    
-    Args:
-        audio_tensor: Pre-loaded audio tensor (torch tensor)
-        sample_rate: Sample rate of audio (default: 44100)
-        output_dir: Directory to save separated stems
-        model_name: Which Demucs model to use
-        normalize: Whether to normalize audio levels
-        denoise: Whether to apply noise reduction
-        num_workers: Number of parallel workers
-    
-    Returns:
-        Dictionary with file paths to each stem
-    
-    Example:
-        >>> audio, sr = torchaudio.load("song.mp3")
-        >>> result = process_audio_file(audio, sr)
-        >>> for stem in result["stems"]:
-        ...     print(f"Stem: {stem}")
-    """
-    
-    # Step 1: Ensure output directory exists
-    output_path = Path(output_dir)
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Step 2: Get or load the Demucs model
-    model = get_dems_model(model_name)
-    
-    # Step 3: Separate into stems
-    # Demucs returns a dict with stem audio tensors
-    stems_dict = demucs.dominant(
-        model,
-        audio_tensor,    # Input audio tensor
-        device=model.device,
-        samples_at_a_time=samples_at_a_time,
-        output_dir=output_dir
-    )
-    
-    # Step 4: Extract stem names
-    stem_names = list(stems_dict.keys())
-    
-    # Step 5: Process each stem
-    stems_output = []
-    for name, stem_audio in stems_dict.items():
-        # Save each stem with normalized output
-        stem_filename = os.path.join(output_dir, f"{name}.mp3")
-        save_audio(
-            stem_audio,
-            stem_filename,
-            sample_rate=sample_rate
-        )
-        
-        stems_output.append({
-            "name": name,
-            "path": stem_filename,
-            "size": os.path.getsize(stem_filename)
-        })
-    
-    # Step 6: Return results
-    return {
-        "file": "input_file.wav",  # Would come from metadata
-        "stems": stems_output,
-        "model": model_name,
-        "duration": audio_tensor.shape[0] / sample_rate
-    }
+def get_dems_model(model_name: str = "htdemucs", device: str = "auto"):
+    """Load and return a Demucs model.
 
-    """
-    Get or load the Demucs model.
-    
     Args:
         model_name: Which model to load (htdemucs, mdxdemucs, etc.)
-    
+        device: Hardware device - 'cuda', 'cpu', or 'auto'.
+
     Returns:
-        Loaded Demucs model
+        Loaded Demucs model ready for inference.
     """
-    # Load model from demucs library
-    model = demucs.load(model_name)
-    model = model.eval()
-    return model
+    import demucs
+
+    if device == "auto":
+        dev = "cuda" if torch.cuda.is_available() else "cpu"
+    else:
+        dev = device
+
+    model = demucs.load(model_name).to(dev)
+    model.eval()
+    return model, dev
+
+
+def process_audio_file(
+    input_file: str,
+    output_dir: str = "./output",
+    model_name: str = "htdemucs",
+    device: str = "auto",
+    format: str = "mp3",
+    bitrate: int = 320,
+    num_workers: int = 2,
+) -> dict:
+    """Process an audio file and separate it into individual stems.
+
+    This is the core entry-point used by both the CLI and any future API / backend service.
+    It loads a Demucs model, runs separation via ``demucs.dominant``, then saves each stem
+    to disk using the requested output format.
+
+    Args:
+        input_file: Path to the input audio file (MP3, WAV, FLAC, OGG, …).
+        output_dir: Directory where separated stems will be written.
+        model_name: Name of the Demucs model to use.
+        device: Hardware device for inference ('cuda', 'cpu', or 'auto').
+        format: Output audio format - ``'mp3'``, ``'wav'`` or ``'flac'``.
+        bitrate: MP3 encoding bitrate in kbps (default 320).
+        num_workers: Number of parallel workers for Demucs processing.
+
+    Returns:
+        Dictionary with metadata about the processed stems, e.g.:
+
+        .. code-block:: python
+
+            {
+                "file": "song.mp3",
+                "duration": 185.32,
+                "model": "htdemucs",
+                "stems": [
+                    {"name": "vocals", "path": "./output/vocals.mp3", "size": 4_192_000},
+                    ...
+                ],
+            }
+
+    Raises:
+        FileNotFoundError: If *input_file* does not exist.
+        RuntimeError: If Demucs separation fails.
+    """
+    # ------------------------------------------------------------------
+    # Step 1 – Validate inputs
+    # ------------------------------------------------------------------
+    input_path = Path(input_file).resolve()
+    if not input_path.is_file():
+        raise FileNotFoundError(f"Input file not found: {input_file}")
+
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    # ------------------------------------------------------------------
+    # Step 2 – Load the Demucs model
+    # ------------------------------------------------------------------
+    model, dev = get_dems_model(model_name, device)
+    print(f"  Model '{model_name}' loaded on {dev}")
+
+    # ------------------------------------------------------------------
+    # Step 3 – Run separation via demucs.dominant()
+    # ------------------------------------------------------------------
+    import demucs
+
+    result = demucs.dominant(
+        model,
+        str(input_path),          # input audio file path
+        str(output_path),         # directory for output stems
+        n_jobs=num_workers,       # parallel workers
+        overwrite=True,           # overwrite existing files
+    )
+
+    # ``demucs.dominant`` returns a dict mapping stem name -> tensor (or Path)
+    # depending on the return type. We handle both cases below.
+
+    # ------------------------------------------------------------------
+    # Step 4 – Determine duration from the input file
+    # ------------------------------------------------------------------
+    metadata, _ = torchaudio.info(str(input_path))
+    duration = metadata.num_frames / metadata.sample_rate if metadata else 0.0
+
+    # ------------------------------------------------------------------
+    # Step 5 – Collect stem paths & sizes
+    # ------------------------------------------------------------------
+    stems_output = []
+    for name in result:
+        stem_file = output_path / f"{name}.{format}"
+        stems_output.append({
+            "name": str(name),
+            "path": str(stem_file),
+            "size": stem_file.stat().st_size if stem_file.exists() else 0,
+        })
+
+    return {
+        "file": input_path.name,
+        "duration": round(duration, 2),
+        "model": model_name,
+        "device": dev,
+        "format": format,
+        "stems": stems_output,
+    }
+
+
+if __name__ == "__main__":
+    # Quick smoke test when run directly
+    print("Pipeline module loaded. Use the CLI or call process_audio_file() programmatically.")

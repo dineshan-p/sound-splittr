@@ -1,29 +1,68 @@
 """
-Unit Tests for Core Modules
-===== ==================
+Unit Tests for Core Modules (audio_io, demucs_helper)
+=====================================================
 
-Test core audio I/O and Demucs integration.
+Tests that run without needing a GPU or real audio files.
+Run with::
+
+    pytest tests/unit/test_core.py -v
+
+or all unit tests::
+
+    pytest tests/unit/ -v
 """
 
-import os
+from __future__ import annotations
+
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+import os
+from pathlib import Path
+
+# Ensure project root is on sys.path for imports
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 
-def test_core_imports():
-    """Test that all core modules can be imported."""
-    from src.core.audio_io import load_audio, save_audio
-    assert True
+class TestAudioIOImports:
+    """Verify that audio I/O modules can be imported cleanly."""
+
+    def test_load_audio_exists(self):
+        from src.core.audio_io import load_audio
+
+        assert callable(load_audio), "load_audio should be a callable function"
+
+    def test_save_audio_exists(self):
+        from src.core.audio_io import save_audio
+
+        assert callable(save_audio)
+
+    def test_get_audio_metadata_exists(self):
+        from src.core.audio_io import get_audio_metadata
+
+        assert callable(get_audio_metadata)
 
 
-def test_process_audio_exists():
-    """Test that main process function exists."""
-    from src.pipeline.process import process_audio_file
-    assert callable(process_audio_file)
+class TestDemucsHelperImports:
+    """Verify that the Demucs helper module can be imported."""
+
+    def test_demucs_engine_class_exists(self):
+        from src.core.demucs_helper import DemucsEngine
+
+        assert DemucsEngine is not None, "DemucsEngine class should exist"
+
+    def test_get_available_models_returns_dict(self):
+        from src.core.demucs_helper import get_available_models
+
+        models = get_available_models()
+        assert isinstance(models, dict), "Should return a dictionary of model info"
+        assert "htdemucs" in models, "Default model htdemucs should be listed"
 
 
-def test_utils_functions_exist():
-    """Test utility functions."""
-    from src.utils import get_file_size, format_duration
-    assert callable(get_file_size)
-    assert callable(format_duration)
+class TestPipelineImports:
+    """Verify that the pipeline module can be imported."""
+
+    def test_process_audio_file_exists(self):
+        from src.pipeline.process import process_audio_file
+
+        assert callable(process_audio_file)

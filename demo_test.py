@@ -54,8 +54,11 @@ except Exception as e:
 print("\n[Test 5] Testing utility functions...")
 test_duration = format_duration(60.5) 
 print(f"  format_duration(60.5) = '{test_duration}'")
-test_size = get_file_size(1024 * 1024 * 3)
-print(f"  get_file_size(3MB) = {test_size}")
+import tempfile
+with tempfile.NamedTemporaryFile(delete=False) as tmp:
+    tmp.write(b"hello")
+    test_size = get_file_size(tmp.name)
+print(f"  get_file_size(temp file) = {test_size} bytes")
 
 # Test 6: Verify engine can be instantiated
 print("\n[Test 6] Testing DemucsEngine instantiation...")
@@ -70,4 +73,4 @@ print("\n" + "=" * 60)
 print("ALL TESTS PASSED!")
 print("=" * 60)
 print("\nThe stem splitter is ready to use.")
-print("Next step: Run the web interface or CLI to process audio files.")
+print("Next step: Use the CLI (python src/cli/main.py) or your own frontend.")
