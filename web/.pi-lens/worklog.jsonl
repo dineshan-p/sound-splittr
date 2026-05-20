@@ -1,1 +1,0 @@
-{"timestamp":"2026-05-19T06:31:43.300Z","filePath":"/home/kobe/brain_2/projects/sound-splittr/web/src/app/core/services/api.service.ts","rule":"console-statement","tool":"tree-sitter","message":"warn — remove debug statements before committing","line":82,"column":10,"fixable":true,"fixSuggestion":"remove this statement","autoFixed":false}

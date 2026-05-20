@@ -6,15 +6,15 @@ A Python-based audio stem splitter using Demucs AI to separate songs into vocals
 
 ## 📋 What Exists Currently
 
-| Component                      | Status                                   |
-| ------------------------------ | ---------------------------------------- |
-| Core splitting engine (Demucs) | ✅ Working                               |
-| CLI command-line tool          | ✅ Working (`src/cli/main.py`)           |
-| Angular web frontend           | ✅ Working (`web/`) — Angular 21          |
-| Unit tests                     | ✅ Implemented (`tests/unit/`)           |
-| Integration tests              | ✅ Implemented (`tests/integration/`)    |
-| Docker deployment files        | ❌ Not yet set up                        |
-| Documentation/tutorials        | ✅ Contains `docs/roadmap-live-dj.md`    |
+| Component                      | Status                                |
+| ------------------------------ | ------------------------------------- |
+| Core splitting engine (Demucs) | ✅ Working                            |
+| CLI command-line tool          | ✅ Working (`src/cli/main.py`)        |
+| Angular web frontend           | ✅ Working (`web/`) — Angular 21      |
+| Unit tests                     | ✅ Implemented (`tests/unit/`)        |
+| Integration tests              | ✅ Implemented (`tests/integration/`) |
+| Docker deployment files        | ❌ Not yet set up                     |
+| Documentation/tutorials        | ✅ Contains `docs/roadmap-live-dj.md` |
 
 ---
 
@@ -117,14 +117,14 @@ The Angular frontend expects a REST API backend. Until you build one, the UI sho
 
 **Expected endpoints:**
 
-| Method | Path                          | Description                              |
-|--------|-------------------------------|------------------------------------------|
-| POST   | `/api/upload`                 | Upload audio + start split → `{ jobId }` |
-| GET    | `/api/jobs`                   | List all jobs (most recent first)        |
-| GET    | `/api/jobs/:id`               | Get one job with full details            |
-| DELETE | `/api/jobs/:id`               | Delete a job and its stem files          |
-| GET    | `/api/stems/:jobId/:stem`     | Download a single stem file              |
-| GET    | `/api/health`                 | Health check (`{ status: "ok" }`)        |
+| Method | Path                      | Description                              |
+| ------ | ------------------------- | ---------------------------------------- |
+| POST   | `/api/upload`             | Upload audio + start split → `{ jobId }` |
+| GET    | `/api/jobs`               | List all jobs (most recent first)        |
+| GET    | `/api/jobs/:id`           | Get one job with full details            |
+| DELETE | `/api/jobs/:id`           | Delete a job and its stem files          |
+| GET    | `/api/stems/:jobId/:stem` | Download a single stem file              |
+| GET    | `/api/health`             | Health check (`{ status: "ok" }`)        |
 
 **Suggested implementation:** Build a FastAPI server that wraps `src/pipeline/process.py` and stores jobs on disk. See `web/src/app/core/services/api.service.ts` for the expected request/response shapes.
 
@@ -137,20 +137,20 @@ Current settings in the project:
 ```yaml
 model:
   name: htdemucs # Demucs model choice (htdemucs, mdxdemucs, etc.)
-  device: auto   # Automatically uses GPU if available, else CPU
+  device: auto # Automatically uses GPU if available, else CPU
   num_workers: 2 # Parallel processing threads for faster splitting
 
 output:
-  format: mp3    # Output file format (mp3 or wav)
-  bitrate: 320   # Audio quality for MP3 output
-  stems:         # The 4 stem outputs
-    - vocals     # Lead and backing vocals
-    - drums      # Drums and percussion
-    - bass       # Bass guitar and low frequencies
-    - other      # Everything else (melody, etc.)
+  format: mp3 # Output file format (mp3 or wav)
+  bitrate: 320 # Audio quality for MP3 output
+  stems: # The 4 stem outputs
+    - vocals # Lead and backing vocals
+    - drums # Drums and percussion
+    - bass # Bass guitar and low frequencies
+    - other # Everything else (melody, etc.)
 
 quality:
-  level: 1       # Speed/quality tradeoff (0=fastest, 3=highest)
+  level: 1 # Speed/quality tradeoff (0=fastest, 3=highest)
 ```
 
 ---

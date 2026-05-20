@@ -12,8 +12,10 @@ web/.angular/
 web/*.log
 
 # =============================================================================
-# SECTION 1: PYTHON VIRTUAL ENVIRONMENT & PACKAGES - NEVER COMMIT THESE!
+# SECTION 0.5: AGENT / TOOL CACHE FILES - NEVER COMMIT THESE
 # =============================================================================
+.pi-lens/
+.pi/
 
 # =============================================================================
 # SECTION 1: PYTHON VIRTUAL ENVIRONMENT & PACKAGES - NEVER COMMIT THESE!
