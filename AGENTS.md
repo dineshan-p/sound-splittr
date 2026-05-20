@@ -54,8 +54,8 @@ Since you're new to stem splitters, our goal is to build and understand the tool
 - **Responsibilities**: Build intuitive user interfaces (web or CLI)
 - **Tasks**:
   - Maintain and improve the Click-based CLI tool
-  - Plan Angular web interface for drag-and-drop uploads
-  - Design REST API endpoints for future frontend consumption
+  - Maintain the Angular 21 web frontend (`web/`)
+  - Design and implement REST API endpoints for the Angular frontend
   - Show processing status in real-time with explanations
 
 ### 5. QA Tester [@qa] - "The Quality Checker"
@@ -253,11 +253,18 @@ def load_audio(file):
 - Demucs handles the complex audio AI stuff
 - Click provides a robust, well-documented CLI
 
-### Optional / Planned Stack
+### Current Stack
 
-- **FastAPI**: For REST API endpoints (backend for Angular)
-- **Angular**: Web frontend (planned, replacing Streamlit)
-- **Docker**: For consistent environments
+- **Python 3.10+**: Core audio processing with Demucs
+- **demucs**: Audio separation (handles the hard work)
+- **click**: CLI framework
+- **Angular 21**: Web frontend (`web/`) — standalone components, signals, typed forms
+- **TypeScript**: Full type safety across frontend interfaces
+
+### Planned Stack
+
+- **FastAPI**: REST API backend (wraps `src/pipeline/process.py`)
+- **Docker**: Containerization for both Python backend and Angular frontend
 
 ---
 
@@ -285,10 +292,18 @@ stem_splitter/
 │       ├── __init__.py       # Common helpers (format_duration, file size)
 │       └── quality.py        # Quality metrics
 │
+├── web/                      # Angular 21 web frontend
+│   ├── src/app/
+│   │   ├── core/             # Models, services (ApiService, SettingsService)
+│   │   ├── pages/            # Route-level components (home, jobs, settings)
+│   │   ├── shared/           # Reusable components (upload, player, status)
+│   │   ├── app.ts            # Shell component
+│   │   ├── app.routes.ts     # Route definitions
+│   │   └── app.config.ts     # HTTP client + router providers
+│   └── src/styles.scss       # Global CSS variables (dark theme)
+│
 ├── app/                      # Demucs models cache
 │   └── models/
-│
-├── web/                      # Static web files (if needed)
 │
 ├── tests/                    # Test suite
 │   ├── __init__.py
@@ -327,7 +342,17 @@ stem_splitter/
 **Why**: Primary user interface for splitting audio files from terminal
 **Features**: GPU detection, dry-run mode, verbose output, format/bitrate options
 
+#### web/src/app/core/services/api.service.ts
 
+**What**: Angular HTTP client for backend API calls
+**Why**: Single source of truth for all REST calls (upload, jobs, stems)
+**Features**: Typed interfaces, error handling, configurable base URL
+
+#### web/src/app/shared/stem-player/stem-player.ts
+
+**What**: Per-stem audio player component
+**Why**: Let users audition each stem before downloading
+**Features**: Play/pause, seek bar, volume, mute/solo toggles
 
 #### requirements.txt
 
@@ -341,14 +366,24 @@ stem_splitter/
 
 ### Minimum Viable Product (Weeks 1-2)
 
-- [ ] Upload audio file
-- [ ] Process with Demucs
-- [ ] Download vocal, drums, bass, melody stems
-- [ ] Basic error handling
+- [x] Upload audio file
+- [x] Process with Demucs
+- [x] Download vocal, drums, bass, melody stems
+- [x] Basic error handling
+- [x] CLI tool (`src/cli/main.py`)
 
-### Full Version (Weeks 4-6)
+### Phase 2: Web Frontend (Weeks 3-4)
 
-- [ ] All MVP features
+- [x] Angular 21 project scaffolded (`web/`)
+- [x] Core components: UploadArea, ProcessingStatus, StemPlayer, StemList
+- [x] Routing: Home, Jobs, Settings pages
+- [x] TypeScript interfaces for API contracts
+- [ ] Backend REST API (FastAPI) — in progress
+- [ ] End-to-end upload → process → download flow
+
+### Full Version (Weeks 5-6)
+
+- [ ] All Phase 2 features
 - [ ] Quality testing suite
 - [ ] Docker container
 - [ ] Complete documentation
@@ -367,11 +402,9 @@ stem_splitter/
 
 ## Next Steps
 
-Before we begin:
-
 1. Review this AGENTS.md and project plan
-2. Discuss what features you care about most
-3. Plan the Angular frontend architecture
-4. Set up development environment together
+2. Build the Backend REST API (FastAPI) to serve the Angular frontend
+3. Test end-to-end: upload via web UI → process → download stems
+4. Dockerize for production deployment
 
 Let me know if you have questions about any section!

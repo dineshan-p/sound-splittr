@@ -1,59 +1,133 @@
-# SoundSplittrWeb
+# Sound Splittr — Angular Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.11.
+Angular 21 web UI for the Sound Splittr audio stem splitter. Drag-and-drop songs, watch real-time splitting progress, and download separated stems.
 
-## Development server
+---
 
-To start a local development server, run:
+## Prerequisites
+
+- **Node.js 18+** (LTS recommended)
+- **npm 9+** or **yarn 1.22+**
+
+---
+
+## Getting Started
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Development Server
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Navigate to `http://localhost:4200/`. The app will auto-reload when you edit source files.
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+### Build for Production
 
 ```bash
 ng build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Output lands in `dist/sound-splittr-web/`. Serve these files with any static file server (nginx, Apache, etc.).
 
-## Running unit tests
+---
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Architecture
 
-```bash
-ng test
+### Pages (Route-Level Components)
+
+| Page | Path | Description |
+|------|------|-------------|
+| Home | `/` | Landing page with drag-drop upload, settings accordion, and stem display |
+| Jobs | `/jobs` | Job history list with status badges, progress bars, and delete actions |
+| Settings | `/settings` | Full-page settings view (API URL, model, format, bitrate) |
+
+### Shared Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| UploadArea | `shared/upload-area/` | Drag-and-drop zone with file validation |
+| ProcessingStatus | `shared/processing-status/` | Circular progress ring with stage labels |
+| StemPlayer | `shared/stem-player/` | Per-stem audio player (play/pause, seek, volume, mute/solo) |
+| StemList | `shared/stem-list/` | Grid of StemPlayer components with download buttons |
+| SettingsPanel | `shared/settings-panel/` | Form for API URL, model, format, bitrate |
+
+### Core Services
+
+| Service | Location | Purpose |
+|---------|----------|---------|
+| ApiService | `core/services/api.service.ts` | HTTP client for all backend REST calls |
+| SettingsService | `core/services/settings.service.ts` | localStorage persistence for user settings (signals-based) |
+
+### Data Models
+
+All TypeScript interfaces live in `core/models/index.ts`:
+
+- `Job` — Represents a split job (id, fileName, status, progress, stems, etc.)
+- `JobStatus` — Union type: `"queued" | "processing" | "completed" | "failed"`
+- `StemInfo` — Metadata for a single stem file
+- `SplitRequest` — Payload sent to the backend when uploading
+- `UploadResponse` — Response from the upload endpoint
+- `ModelOption` — Available Demucs models with labels and descriptions
+- `AppSettings` — Persisted user preferences (apiUrl, defaultModel, format, bitrate)
+
+---
+
+## Theming
+
+The app uses a dark theme defined by CSS custom properties in `src/styles.scss`:
+
+```scss
+:root {
+  --color-bg: #0f172a;
+  --color-text: #e2e8f0;
+  --color-accent: #6c63ff;
+  --color-border: #4a5568;
+  /* ... more tokens */
+}
 ```
 
-## Running end-to-end tests
+Override these variables to create a light mode or custom theme.
 
-For end-to-end (e2e) testing, run:
+---
+
+## Backend API Integration
+
+The frontend expects a REST API at the URL configured in Settings. See the project root `README.md` for the full API spec.
+
+**Expected endpoints:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/upload` | Upload audio + start split → `{ jobId }` |
+| GET | `/api/jobs` | List all jobs |
+| GET | `/api/jobs/:id` | Get job details |
+| DELETE | `/api/jobs/:id` | Delete a job |
+| GET | `/api/stems/:jobId/:stem` | Download a stem file |
+| GET | `/api/health` | Health check |
+
+Until the backend is running, the UI shows a warning banner and works in demo mode.
+
+---
+
+## Testing
 
 ```bash
-ng e2e
+ng test          # Run unit tests (Vitest)
+ng lint          # Lint TypeScript and SCSS
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+---
 
-## Additional Resources
+## Key Files
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- `src/app/app.ts` — Shell component with navigation bar
+- `src/app/app.routes.ts` — Route definitions
+- `src/app/app.config.ts` — Application providers (HTTP client, router)
+- `src/styles.scss` — Global CSS variables and base reset
+- `src/main.ts` — Bootstrap entry point
