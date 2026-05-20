@@ -1,0 +1,57 @@
+/**
+ * Stem-List Styles
+ */
+
+.stem-list {
+  $base: &;
+
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .list-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text, #e2e8f0);
+  }
+
+  // ── Download All button ────────────────────────────────────────────────
+
+  .download-all-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: var(--color-accent, #6c63ff);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+
+    &:hover {
+      filter: brightness(1.15);
+    }
+  }
+
+  // ── Grid of stem cards ────────────────────────────────────────────────
+
+  .stem-grid {
+    display: grid;
+    gap: 12px;
+    // Responsive: fit as many columns as possible, at least 300px wide
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  .empty-msg {
+    text-align: center;
+    color: var(--color-muted, #a0aec0);
+    font-style: italic;
+  }
+}

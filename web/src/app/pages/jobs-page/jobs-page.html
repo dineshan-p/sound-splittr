@@ -1,0 +1,64 @@
+<div class="jobs-page">
+  <header class="page-header">
+    <h1>📋 Job History</h1>
+    <button class="btn-refresh" (click)="loadJobs()" [disabled]="loading">
+      {{ loading ? '⏳ Loading...' : '↻ Refresh' }}
+    </button>
+  </header>
+
+  <!-- No jobs state -->
+  @if (!loading && jobs.length === 0) {
+  <div class="empty-state">
+    <p class="empty-icon">📭</p>
+    <h3>No jobs yet</h3>
+    <p>
+      All your split jobs will appear here. Go to the Home page to create one!
+    </p>
+    <a routerLink="/" class="btn-primary">Go to Home</a>
+  </div>
+  }
+
+  <!-- Job list -->
+  @if (!loading && jobs.length > 0) {
+  <div class="job-list">
+    @for (job of jobs; track job.id) {
+    <div class="job-card" [class]="getStatusClass(job.status)">
+      <div class="job-info">
+        <span class="job-filename">{{ job.fileName }}</span>
+        <span class="job-meta">
+          {{ formatRelative(job.createdAt) }} · @if (job.durationSeconds) { {{
+          Math.round(job.durationSeconds) + 's' }} · } {{ getStemCount(job) }}
+          stems @if (job.modelUsed) { · {{ job.modelUsed }} }
+        </span>
+      </div>
+
+      <div class="job-actions">
+        <!-- Status badge -->
+        <span class="status-badge">{{ capitalize(job.status) }}</span>
+
+        <!-- Progress bar for in-progress jobs -->
+        @if (job.progress > 0 && job.progress < 100) {
+        <div class="mini-progress">
+          <div class="mini-bar" [style.width.%]="job.progress"></div>
+        </div>
+        }
+
+        <!-- Error message -->
+        @if (job.error) {
+        <span class="job-error">{{ job.error }}</span>
+        }
+
+        <!-- Delete button -->
+        <button
+          class="btn-delete"
+          (click)="onDelete(job.id)"
+          title="Delete job"
+        >
+          🗑️
+        </button>
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>

@@ -1,0 +1,24 @@
+<!-- App Shell — Main Layout ===================== -->
+<header class="app-nav">
+  <div class="nav-inner">
+    <!-- Logo / Brand -->
+    <a routerLink="/" class="brand">🎚️ Sound Splittr</a>
+
+    <!-- Navigation links -->
+    <nav class="nav-links">
+      <a
+        routerLink="/"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        >Home</a
+      >
+      <a routerLink="/jobs" routerLinkActive="active">Jobs</a>
+      <a routerLink="/settings" routerLinkActive="active">Settings</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Page content (router outlet) -->
+<main class="app-main">
+  <router-outlet />
+</main>

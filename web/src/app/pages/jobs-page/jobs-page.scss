@@ -1,0 +1,191 @@
+/**
+ * Jobs Page Styles
+ */
+
+.jobs-page {
+  $base: &;
+  padding: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text, #e2e8f0);
+    }
+  }
+
+  .btn-refresh {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    color: var(--color-text, #e2e8f0);
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border, #4a5568);
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    &:not(:disabled):hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  // ── Empty state ────────────────────────────────────────────────────────
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 24px;
+    text-align: center;
+    color: var(--color-muted, #a0aec0);
+
+    .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+    h3 { margin: 0 0 8px; color: var(--color-text, #e2e8f0); }
+
+    .btn-primary {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 10px 24px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      background-color: var(--color-accent, #6c63ff);
+      border-radius: 8px;
+      text-decoration: none;
+
+      &:hover { filter: brightness(1.15); }
+    }
+  }
+
+  // ── Job list ───────────────────────────────────────────────────────────
+
+  .job-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .job-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-radius: 8px;
+    background-color: var(--color-bg-subtle, rgba(255, 255, 255, 0.03));
+    border-left: 3px solid transparent;
+
+    &.badge-queued { border-left-color: #ecc94b; }
+    &.badge-processing { border-left-color: #6c63ff; }
+    &.badge-completed { border-left-color: #48bb78; }
+    &.badge-failed { border-left-color: #fc8181; }
+
+    .job-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .job-filename {
+      display: block;
+      font-weight: 600;
+      color: var(--color-text, #e2e8f0);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .job-meta {
+      font-size: 0.75rem;
+      color: var(--color-muted, #a0aec0);
+    }
+
+    .job-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      margin-left: 16px;
+    }
+  }
+
+  // ── Status badge ───────────────────────────────────────────────────────
+
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #e2e8f0;
+    border-radius: 4px;
+
+    &.badge-queued { background-color: rgba(236, 201, 75, 0.15); }
+    &.badge-processing { background-color: rgba(108, 99, 255, 0.15); }
+    &.badge-completed { background-color: rgba(72, 187, 120, 0.15); }
+    &.badge-failed { background-color: rgba(252, 129, 129, 0.15); }
+  }
+
+  // ── Mini progress bar ────────────────────────────────────────────────
+
+  .mini-progress {
+    width: 80px;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--color-border, #4a5568);
+    overflow: hidden;
+
+    .mini-bar {
+      height: 100%;
+      background-color: var(--color-accent, #6c63ff);
+      transition: width 0.3s ease;
+    }
+  }
+
+  .job-error {
+    font-size: 0.75rem;
+    color: #fc8181;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .btn-delete {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+
+    &:hover { opacity: 1; }
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .page-header {
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .job-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+
+      .job-actions { margin-left: 0; }
+    }
+  }
+}

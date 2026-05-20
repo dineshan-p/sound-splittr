@@ -1,0 +1,73 @@
+<div class="stem-card">
+  <!-- Header: name + controls -->
+  <div class="stem-header">
+    <span class="stem-label">{{ stem().displayName }}</span>
+    <div class="header-controls">
+      <!-- Mute button -->
+      <button
+        class="ctrl-btn"
+        [class.muted]="isMuted()"
+        (click)="toggleMute()"
+        title="{{ isMuted() ? 'Unmute' : 'Mute' }}"
+      >
+        {{ isMuted() ? '🔇' : '🔊' }}
+      </button>
+
+      <!-- Solo button -->
+      <button
+        class="ctrl-btn"
+        [class.solo-active]="isSoloed()"
+        (click)="toggleSolo()"
+        title="{{ isSoloed() ? 'Un-solo' : 'Solo' }}"
+      >
+        S
+      </button>
+
+      <!-- Download button -->
+      <button class="ctrl-btn" (click)="onDownload()" title="Download stem">
+        ⬇️
+      </button>
+    </div>
+  </div>
+
+  <!-- Play/Pause button -->
+  <button
+    class="play-btn"
+    (click)="togglePlay()"
+    [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'"
+  >
+    {{ isPlaying() ? '⏸️' : '▶️' }}
+  </button>
+
+  <!-- Seek bar with time labels -->
+  <div class="seek-bar">
+    <span class="time">{{ formatTime(currentTime()) }}</span>
+    <input
+      type="range"
+      min="0"
+      [max]="duration() || 1"
+      step="0.1"
+      [value]="currentTime()"
+      (input)="seek($event)"
+      class="range-input"
+    />
+    <span class="time">{{ formatTime(duration()) }}</span>
+  </div>
+
+  <!-- Volume slider -->
+  <div class="volume-bar">
+    <label for="vol-{{ stem().name }}" class="sr-only">Volume</label>
+    <input
+      id="vol-{{ stem().name }}"
+      type="range"
+      min="0"
+      max="100"
+      [value]="volume()"
+      (input)="setVolume($event)"
+      class="range-input volume-input"
+    />
+  </div>
+
+  <!-- Stem name badge -->
+  <span class="stem-badge">{{ stem().name }}</span>
+</div>

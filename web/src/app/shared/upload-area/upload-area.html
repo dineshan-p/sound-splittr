@@ -1,0 +1,41 @@
+<div
+  class="upload-area"
+  [class.dragging]="isDragging"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+>
+  <!-- Upload icon -->
+  <div class="icon">
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  </div>
+
+  <!-- Text prompts -->
+  <p class="main-text">Drag &amp; drop an audio file here</p>
+  <p class="sub-text">or click to browse · MP3, WAV, FLAC, OGG supported</p>
+
+  <!-- Hidden file input -->
+  <input
+    type="file"
+    accept=".mp3,.wav,.flac,.ogg,.m4a,.aac"
+    (change)="onFileSelected($event)"
+    class="file-input"
+    id="audio-upload"
+  />
+
+  <!-- Label acts as a button -->
+  <label for="audio-upload" class="browse-btn">Browse Files</label>
+</div>
