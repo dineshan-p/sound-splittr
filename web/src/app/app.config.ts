@@ -10,7 +10,7 @@ import { routes } from "./app.routes";
 export const appConfig: ApplicationConfig = {
 	providers: [
 		provideBrowserGlobalErrorListeners(),
-		provideHttpClient(withFetch()), // HTTP client for API calls
-		provideRouter(routes), // Router for page navigation
+		provideHttpClient(withFetch()),
+		provideRouter(routes),
 	],
 };

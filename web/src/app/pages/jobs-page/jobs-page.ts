@@ -1,13 +1,8 @@
-/**
- * Jobs Page — Job History
- * ========================
- * Lists all split jobs with their current status, creation date, and
- * quick actions (view stems, delete).
- */
-
 import { Component, type OnInit, inject } from "@angular/core";
+import { lastValueFrom } from "rxjs";
 import { RouterLink } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
+import { NotificationService } from "../../core/services/notification.service";
 import type { Job } from "../../core/models";
 
 @Component({
@@ -18,15 +13,12 @@ import type { Job } from "../../core/models";
 	standalone: true,
 })
 export class JobsPage implements OnInit {
-	// Expose Math for template usage
 	readonly Math = Math;
 
 	private api = inject(ApiService);
+	private notifications = inject(NotificationService);
 
-	/** All jobs loaded from the backend. */
 	jobs: Job[] = [];
-
-	/** Whether we're currently fetching. */
 	loading = true;
 
 	ngOnInit(): void {
@@ -36,29 +28,34 @@ export class JobsPage implements OnInit {
 	async loadJobs(): Promise<void> {
 		this.loading = true;
 		try {
-			const jobs = await this.api.listJobs().toPromise();
-			this.jobs = jobs ?? [];
+			const jobs = await lastValueFrom(this.api.listJobs(), {
+				defaultValue: [],
+			});
+			this.jobs = jobs;
 		} catch (err) {
-			console.error("Failed to load jobs:", err);
-			// On error, show an empty list — the backend may not be running yet
+			this.notifications.error(
+				"Failed to load job history. The backend may not be running.",
+			);
 			this.jobs = [];
 		} finally {
 			this.loading = false;
 		}
 	}
 
-	/** Delete a job and refresh the list. */
 	async onDelete(jobId: string): Promise<void> {
-		if (!confirm("Delete this job and all its stem files?")) return;
+		const confirmed = await this.notifications.confirm(
+			"Delete this job and all its stem files?",
+		);
+		if (!confirmed) return;
 		try {
-			await this.api.deleteJob(jobId).toPromise();
+			await lastValueFrom(this.api.deleteJob(jobId));
 			this.jobs = this.jobs.filter((j) => j.id !== jobId);
+			this.notifications.success("Job deleted");
 		} catch (err) {
-			alert(`Failed to delete: ${err}`);
+			this.notifications.error(`Failed to delete: ${err}`);
 		}
 	}
 
-	/** Get a CSS class for the job status badge. */
 	getStatusClass(status: string): string {
 		const map: Record<string, string> = {
 			queued: "badge-queued",
@@ -69,7 +66,6 @@ export class JobsPage implements OnInit {
 		return `status-badge ${map[status] ?? ""}`;
 	}
 
-	/** Format an ISO timestamp to a relative time string. */
 	formatRelative(isoString: string): string {
 		const diff = Date.now() - new Date(isoString).getTime();
 		const mins = Math.floor(diff / 60_000);
@@ -81,19 +77,16 @@ export class JobsPage implements OnInit {
 		return `${days}d ago`;
 	}
 
-	/** Format file size. */
 	formatSize(bytes: number): string {
 		if (bytes > 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
 		if (bytes > 1_024) return `${(bytes / 1_024).toFixed(0)} KB`;
 		return `${bytes} B`;
 	}
 
-	/** Get stem count for a job. */
 	getStemCount(job: Job): number {
 		return job.stems?.length ?? 0;
 	}
 
-	/** Capitalize the first letter of a string (for template display). */
 	capitalize(s: string): string {
 		return s.charAt(0).toUpperCase() + s.slice(1);
 	}

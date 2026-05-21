@@ -76,7 +76,7 @@ class TestProcessAudioFileRaisesOnMissingInput:
 class TestPipelineModuleStructure:
     """Verify the pipeline module has expected exports."""
 
-    def test_get_dems_model_exists(self):
-        from src.pipeline.process import get_dems_model
+    def test_get_demucs_model_exists(self):
+        from src.pipeline.process import get_demucs_model
 
-        assert callable(get_dems_model)
+        assert callable(get_demucs_model)

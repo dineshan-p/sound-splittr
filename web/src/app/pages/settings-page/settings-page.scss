@@ -14,7 +14,7 @@
     justify-content: space-between;
     margin-bottom: 24px;
 
-    h1 {
+    h2 {
       margin: 0;
       font-size: 1.5rem;
       font-weight: 700;
@@ -23,11 +23,25 @@
   }
 
   .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 0.9rem;
+    font-weight: 500;
     color: var(--color-accent, #6c63ff);
     text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
 
-    &:hover { text-decoration: underline; }
+    &:hover { opacity: 0.8; }
+
+    svg {
+      transition: transform 0.15s ease;
+    }
+
+    &:hover svg {
+      transform: translateX(-2px);
+    }
   }
 
   .settings-content {

@@ -1,5 +1,5 @@
 <div class="settings-panel">
-  <h3 class="panel-title">⚙️ Settings</h3>
+  <h3 class="panel-title">Settings</h3>
 
   <!-- API URL -->
   <div class="form-group">
@@ -7,8 +7,9 @@
     <input
       id="api-url"
       type="url"
+      #apiInput
       [value]="apiUrl"
-      (input)="apiUrl = $any($event.target).value"
+      (input)="apiUrl = apiInput.value"
       placeholder="http://localhost:8000"
       class="form-input"
     />
@@ -17,7 +18,7 @@
     >
 
     <!-- Test connection button -->
-    <button class="btn-test" (click)="testConnection()">Test Connection</button>
+    <button class="btn-test" (click)="testConnection()">Test</button>
   </div>
 
   <!-- Default Model -->
@@ -25,8 +26,9 @@
     <label for="model-select" class="form-label">Default Model</label>
     <select
       id="model-select"
+      #modelSelect
       [value]="model"
-      (change)="model = $any($event.target).value"
+      (change)="model = modelSelect.value"
       class="form-input form-select"
     >
       @for (opt of models; track opt.id) {
@@ -41,8 +43,9 @@
     <label for="format-select" class="form-label">Output Format</label>
     <select
       id="format-select"
+      #formatSelect
       [value]="format"
-      (change)="format = $any($event.target).value"
+      (change)="setFormatValue(formatSelect.value)"
       class="form-input form-select"
     >
       <option value="mp3">MP3 (lossy, smaller files)</option>
@@ -57,8 +60,9 @@
     <label for="bitrate-select" class="form-label">MP3 Bitrate</label>
     <select
       id="bitrate-select"
+      #bitrateSelect
       [value]="bitrate"
-      (change)="bitrate = parseIntValue($any($event.target).value)"
+      (change)="bitrate = parseIntValue(bitrateSelect.value)"
       class="form-input form-select"
     >
       <option [value]="128">128 kbps (standard)</option>
@@ -70,7 +74,5 @@
   }
 
   <!-- Reset button -->
-  <button class="btn-reset" (click)="resetToDefaults()">
-    Reset to Defaults
-  </button>
+  <button class="btn-reset" (click)="resetToDefaults()">Reset</button>
 </div>

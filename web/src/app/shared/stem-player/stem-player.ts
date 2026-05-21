@@ -1,17 +1,3 @@
-/**
- * Stem-Player Component
- * ======================
- * An audio player for one individual stem (vocals, drums, bass, other).
- *
- * Features:
- * - Play / pause with a single button
- * - Seek bar scrubbing
- * - Volume slider
- * - Mute toggle
- * - Solo / mute-all buttons for live mixing
- * - Download link for the stem file
- */
-
 import {
 	Component,
 	input,
@@ -19,17 +5,15 @@ import {
 	signal,
 	type AfterViewInit,
 	type OnDestroy,
+	inject,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { NotificationService } from "../../core/services/notification.service";
 
 export interface StemPlayerProps {
-	/** Unique identifier for this stem (e.g. "vocals"). */
 	name: string;
-	/** Human-readable label displayed in the UI. */
 	displayName: string;
-	/** URL to download / stream the stem audio file. */
 	src: string;
-	/** Current playback time in seconds (for sync with other stems). */
 	currentTime?: number;
 }
 
@@ -41,24 +25,19 @@ export interface StemPlayerProps {
 	standalone: true,
 })
 export class StemPlayerComponent implements AfterViewInit, OnDestroy {
-	/** Input props from parent. */
-	stem = input.required<StemPlayerProps>();
+	private notifications = inject(NotificationService);
 
-	/** Emits when the user clicks download. */
+	stem = input.required<StemPlayerProps>();
 	downloaded = output<string>();
 
-	/** Internal audio element reference. */
 	private audio: HTMLAudioElement | null = null;
 
-	// Reactive state exposed to template
 	isPlaying = signal(false);
 	isMuted = signal(false);
 	volume = signal(100);
 	duration = signal(0);
 	currentTime = signal(0);
 	isSoloed = signal(false);
-
-	// ─── Lifecycle ──────────────────────────────────────────────────────
 
 	ngAfterViewInit(): void {
 		this.audio = document.createElement("audio");
@@ -79,11 +58,8 @@ export class StemPlayerComponent implements AfterViewInit, OnDestroy {
 		this.audio = null;
 	}
 
-	// ─── Playback Controls ──────────────────────────────────────────────
-
 	togglePlay(): void {
 		if (!this.audio) return;
-
 		if (this.isPlaying()) {
 			this.pause();
 		} else {
@@ -93,7 +69,6 @@ export class StemPlayerComponent implements AfterViewInit, OnDestroy {
 
 	private play(): void {
 		if (!this.audio) return;
-		// If another stem is soloed, pause it first
 		document.dispatchEvent(
 			new CustomEvent("stem-pause-other", { detail: this.stem().name }),
 		);
@@ -124,15 +99,12 @@ export class StemPlayerComponent implements AfterViewInit, OnDestroy {
 		}
 	}
 
-	// ─── Volume & Mute ──────────────────────────────────────────────────
-
 	setVolume(event: Event): void {
 		const val = Number((event.target as HTMLInputElement).value);
 		this.volume.set(val);
 		if (this.audio) {
 			this.audio.volume = val / 100;
 		}
-		// If volume goes above 0, unmute
 		if (val > 0 && this.isMuted()) {
 			this.isMuted.set(false);
 			if (this.audio) this.audio.muted = false;
@@ -147,45 +119,33 @@ export class StemPlayerComponent implements AfterViewInit, OnDestroy {
 		}
 	}
 
-	// ─── Solo / Mute-All ────────────────────────────────────────────────
-
 	toggleSolo(): void {
 		const wasSoloed = this.isSoloed();
 		this.isSoloed.set(!wasSoloed);
 
 		if (!wasSoloed) {
-			// Pause all other stems when soloing
 			document.dispatchEvent(new CustomEvent("stem-pause-all"));
 		} else {
-			// If no stem is soloed, resume whatever was playing
 			document.dispatchEvent(new CustomEvent("resume-previous"));
 		}
 	}
 
-	/** Handle global pause-other event from another stem's play. */
 	handlePauseOther(): void {
 		if (!this.isSoloed() && this.isPlaying()) {
 			this.pause();
 		}
 	}
 
-	/** Handle global mute-all event (when a non-soloed stem starts playing). */
 	handleMuteAll(): void {
-		// Don't mute ourselves if we're soloed
 		if (!this.isSoloed()) {
 			this.isMuted.set(true);
 		}
 	}
 
-	/** Handle resume when the last solo is cleared. */
 	handleResumePrevious(): void {
-		// Only resume if no other stem is currently soloed
-		// This coordination happens at the parent level
+		// Coordinated at parent level
 	}
 
-	// ─── Utility ────────────────────────────────────────────────────────
-
-	/** Format seconds as MM:SS or HH:MM:SS. */
 	formatTime(seconds: number): string {
 		const total = Math.floor(seconds);
 		const h = Math.floor(total / 3600);
@@ -198,8 +158,8 @@ export class StemPlayerComponent implements AfterViewInit, OnDestroy {
 		return `${m}:${s.toString().padStart(2, "0")}`;
 	}
 
-	/** Handle download button click. */
 	onDownload(): void {
 		this.downloaded.emit(this.stem().name);
+		this.notifications.info(`Downloading ${this.stem().displayName}`);
 	}
 }

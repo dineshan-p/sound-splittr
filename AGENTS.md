@@ -1,410 +1,189 @@
-AGENTS.md
+# AGENTS.md — Sound Splittr
 
-An audio stem splitter application using Demucs for DJing. This project enables DJs to create custom versions of their songs with separated stems (vocals, drums, bass, melody) for live remixing and performance.
+Audio stem splitter for DJs using Demucs AI. Separates vocals, drums, bass, melody for live remixing.
 
 ---
 
-## Important: Learning This Together
+## Working With This Project
 
-Since you're new to stem splitters, our goal is to build and understand the tool together:
-
-- **Explain code**: Agents will explain key code sections as we build them
-- **Good comments**: All code should have clear, educational comments
-- **Step-by-step**: We'll progress in phases so you learn as we build
-- **No jargon without explanation**: Technical terms get explained when they appear
+- **Explain code**: Agents explain key sections as they build
+- **Clear comments**: Code should be self-documenting; docstrings explain what and why
+- **Step-by-step**: Progress in phases; ask before making big decisions
+- **No unexplained jargon**: Technical terms get a brief definition on first use
 
 ---
 
 ## Roles
 
-### 1. Project Architect [@architect] - "The Guide"
+### 1. Project Architect — "The Guide"
 
-- **Responsibilities**: Oversee project design, coordinate agent work, explain concepts
-- **Tasks**:
-  - Design overall system architecture with you in mind
-  - Explain why we're making certain design choices
-  - Simplify technical concepts for better understanding
-  - Coordinate cross-agent collaboration
-  - Review all code for clarity and educational value
+- Oversees system design and coordinates agent work
+- Explains design choices and simplifies technical concepts
+- Reviews code for clarity and educational value
 
-### 2. Audio Engineer [@audio_engineer] - "The Sound Expert"
+### 2. Audio Engineer — "The Sound Expert"
 
-- **Responsibilities**: Handle all audio processing, demucs integration, quality assurance
-- **Tasks**:
-  - Integrate Demucs library and configure models
-  - Explain audio concepts (samples, channels, bit depth)
-  - Optimize audio processing pipeline for quality
-  - Post-processing for stem quality enhancement
-  - Test separation quality across different song genres
-  - **Always comment why we process audio this way**
+- Integrates Demucs, configures models, ensures separation quality
+- Explains audio concepts (sample rate, channels, bit depth)
+- Optimizes the processing pipeline; comments *why* audio operations exist
 
-### 3. Backend Developer [@backend] - "The Pipeline Builder"
+### 3. Backend Developer — "The Pipeline Builder"
 
-- **Responsibilities**: Implement core services, API endpoints, file management
-- **Tasks**:
-  - Build file upload/download handlers with clear explanations
-  - Implement queue system for batch processing
-  - Create API endpoints with documentation
-  - Manage metadata extraction (BPFID3, tags)
-  - Implement caching for audio models
-  - **Comment on file formats and why we use them**
+- Implements FastAPI endpoints, file management, queue system
+- Manages metadata extraction and model caching
+- Documents API endpoints and explains format choices
 
-### 4. Frontend/CLI Developer [@frontend] - "The Interface Designer"
+### 4. Frontend/CLI Developer — "The Interface Designer"
 
-- **Responsibilities**: Build intuitive user interfaces (web or CLI)
-- **Tasks**:
-  - Maintain and improve the Click-based CLI tool
-  - Maintain the Angular 21 web frontend (`web/`)
-  - Design and implement REST API endpoints for the Angular frontend
-  - Show processing status in real-time with explanations
+- Maintains the Click-based CLI and Angular 21 web frontend
+- Implements REST API contracts and real-time status updates
 
-### 5. QA Tester [@qa] - "The Quality Checker"
+### 5. QA Tester — "The Quality Checker"
 
-- **Responsibilities**: Test audio quality, edge cases, error handling
-- **Tasks**:
-  - Create test suite with diverse audio samples across genres
-  - Test memory usage and processing speed
-  - Validate stem separation quality
-  - Document known limitations and issues
-  - Create "how to fix" guides with explanations
-  - **Test that everything is beginner-friendly**
+- Tests across genres, file sizes, and edge cases
+- Validates separation quality, memory usage, processing speed
+- Documents limitations and creates troubleshooting guides
 
-### 6. Documentation Specialist [@docs] - "The Teacher"
+### 6. Documentation Specialist — "The Teacher"
 
-- **Responsibilities**: Create tutorials, guides, explain code
-- **Tasks**:
-  - Write installation guide with "why" explanations
-  - Create "first use" tutorial for beginners
-  - Add inline code comments and docstrings
-  - Maintain code examples for learning
-  - Document API with examples
-  - Create FAQ with gentle troubleshooting
-  - **All docs should be beginner-appropriate**
+- Writes installation guides, tutorials, API docs, and FAQ
+- Ensures all documentation is beginner-appropriate
+- Starts with "what" before "how"; always includes "why this matters"
 
-### 7. Deployment Engineer [@deploy] - "The Container Maker"
+### 7. Deployment Engineer — "The Container Maker"
 
-- **Responsibilities**: Dockerize, production setup, deployment
-- **Tasks**:
-  - Create simple Dockerfile with explanations
-  - Set up Docker Compose for local development
-  - Write deployment guides with step-by-step instructions
-  - Configure production server with beginner instructions
-  - Explain each deployment decision
+- Dockerizes the app (Python backend + Angular frontend)
+- Sets up Docker Compose for local dev
+- Writes deployment guides with step-by-step instructions
 
 ---
 
 ## Communication Style
 
-### For the Architect
-
-- Always explain technical decisions in simple terms
-- When introducing a concept, use an analogy
-- Check understanding between major milestones
-
-### For Audio Engineer
-
-- Never assume knowledge of audio concepts
-- Always comment WHY we do something, not just HOW
-- Use audio metaphors ("
-
-### For Documentation
-
-- Start with "What this is" before "How it works"
-- Always include "Why this matters"
-- Keep examples beginner-friendly
+- **Architect**: Explain decisions in simple terms; use analogies; check understanding at milestones
+- **Audio Engineer**: Never assume audio knowledge; comment *why*, not just *how*
+- **Documentation**: Start with "what" → "how" → "why"; keep examples beginner-friendly
 
 ---
 
-## Code Commentary Standards
+## Code Standards
 
-All code must follow these principles:
+### DO
+- Add docstrings to public functions (what it does, args, returns)
+- Comment non-obvious logic or trade-offs
+- Use type hints
 
-### DO: Include comments
-
-```python
-# Extract stems from multi-track audio audio_file
-# Returns a dictionary with tracks separated into different stems
-with open(audio_file) as f:
-    # Process audio
-
-def process_audio(audio):
-    """Main function to process audio.
-    Uses Demucs model to separate vocals, drums, bass, melody."""
-    # ... implementation with comments
-```
-
-### FORGIVE: Occasional questions
-
-- It's OK to ask for code explanations
-- It's OK to say "I don't understand this part"
-- Agents should explain any confusing section
-
-### AVOID: Bare functions without docstrings
-
-```
-# BAD
-
-def load_audio(file):
-    return torchaudio.load(file)
-
-# GOOD
-def load_audio(file):
-    """Load audio file into torch tensor format.
-
-    Args:
-        file: Path to audio file
-
-    Returns:
-        Tensor with audio data
-		"""
-    # Load the audio
-    return torchaudio.load(file)
-```
+### AVOID
+- Bare functions without docstrings
+- Comments that restate what the code already says
+- Verbose inline explanations for simple operations
 
 ---
 
 ## Workflow Phases
 
-### Phase 1: Foundation (Weeks 1-2)
+### Phase 1: Foundation (Weeks 1-2) ✅ Complete
 
-**Goal**: Basic splitter that works end-to-end
+- [x] Python project initialized with Demucs integration
+- [x] CLI tool (`src/cli/main.py`) with GPU detection, dry-run mode
+- [x] Processing pipeline (`src/pipeline/process.py`)
+- [x] End-to-end: upload → process → download stems
 
-1. **Setup** (Architect leads)
-   - Initialize Python project
-   - Install dependencies
-   - Create basic directory structure
-   - Explain each file's purpose
+### Phase 2: Web Frontend & Backend API (Weeks 3-4) ✅ Complete
 
-2. **Audio Core** (Audio Engineer + Backend + Architect)
-   - Integrate Demucs
-   - Basic file input/output
-   - Simple processing pipeline
-   - Comment every audio operation
+- [x] Angular 21 frontend with UploadArea, ProcessingStatus, StemPlayer, StemList
+- [x] Routing: Home, Jobs, Settings pages
+- [x] TypeScript interfaces for API contracts
+- [x] FastAPI backend (`src/api/server.py`) with job queue
+- [x] End-to-end: upload via web UI → process → download stems
+- [x] UI polish pass (accessibility, design tokens, no-pure-white rule)
 
-3. **CLI Interface** (Frontend + Backend)
-   - Click-based command-line tool with progress output
-   - Dry-run mode for validation before processing
-   - GPU status detection and reporting
+### Phase 3: Production Readiness (Weeks 5-6)
 
-**End Goal**: Upload song → Get stems in 5 minutes → Download all stems
+- [ ] Quality testing suite
+- [ ] Docker container (backend + frontend)
+- [ ] Complete documentation and FAQ
+- [x] `.gitignore` and `requirements.txt` cleanup
 
-### Phase 2: Quality & Testing (Weeks 3-4)
+### Phase 4: Maintenance (Ongoing)
 
-**Goal**: Reliable, high-quality output
-
-1. **Test Suite** (QA + Audio Engineer)
-   - Create diverse test files (rock, pop, electronic, jazz)
-   - Measure quality metrics
-   - Test with different file sizes/formats
-   - Document expected quality per genre
-
-2. **Optimization** (Audio Engineer + Backend)
-   - Batch processing improvements
-   - Memory management
-   - GPU vs CPU handling
-   - Caching strategies
-
-**End Goal**: Process any audio file reliably with good quality
-
-### Phase 3: Polish & Documentation (Weeks 5-6)
-
-**Goal**: Production-ready, easy to use
-
-1. **User Guides** (Docs + Frontend)
-   - "First Time Use" guide
-   - "Understanding Your Stems" tutorial
-   - "Best Practices" guide
-   - FAQ and troubleshooting
-
-2. **Code Polish** (Architect + All)
-   - Final code review
-   - Add missing comments
-   - Fix bugs from testing
-   - Performance improvements
-
-3. **Deployment** (Deploy + Architect)
-   - Docker images
-   - Cloud deployment options
-   - Local installation instructions
-
-### Phase 4: Maintenance & Enhancement (Ongoing)
-
-**Goal**: Keep improving
-
-- Monitor usage and collect feedback
-- Add new features as needed
+- Monitor usage, collect feedback
 - Update for new Demucs versions
 - Expand genre coverage
 
 ---
 
-## Technical Stack (Beginner-friendly)
+## Technical Stack
 
-### Core Dependencies
-
-- **Python 3.10+**: Easy to learn, lots of resources
-- **demucs**: Audio separation (handles the hard work)
-- **scipy**: Audio resampling & spectral analysis
-- **click**: CLI framework (command-line interface)
-
-### Why These?
-
-- Python is great for beginners - lots of tutorials
-- Demucs handles the complex audio AI stuff
-- Click provides a robust, well-documented CLI
-
-### Current Stack
-
-- **Python 3.10+**: Core audio processing with Demucs
-- **demucs**: Audio separation (handles the hard work)
-- **click**: CLI framework
-- **Angular 21**: Web frontend (`web/`) — standalone components, signals, typed forms
-- **TypeScript**: Full type safety across frontend interfaces
-
-### Planned Stack
-
-- **FastAPI**: REST API backend (wraps `src/pipeline/process.py`)
-- **Docker**: Containerization for both Python backend and Angular frontend
+| Layer | Technology |
+|-------|-----------|
+| Audio AI | Demucs (PyTorch) |
+| Backend | Python 3.10+, FastAPI, click (CLI) |
+| Frontend | Angular 21, TypeScript, SCSS |
+| Container | Docker, Docker Compose |
+| Audio I/O | soundfile, pydub |
 
 ---
 
 ## Project Structure
 
 ```
-stem_splitter/
-├── README.md                 # Main guide with explanations
+sound-splittr/
+├── src/                      # Python backend
+│   ├── api/                  # FastAPI server + job queue
+│   │   ├── server.py         # REST endpoints
+│   │   └── queue.py          # Job management with GPU fallback
+│   ├── core/                 # Audio processing
+│   │   ├── demucs_helper.py  # Model loading & metadata
+│   │   └── audio_io.py       # Load/save audio (soundfile/pydub)
+│   ├── pipeline/
+│   │   └── process.py        # Main stem separation pipeline
+│   ├── cli/
+│   │   └── main.py           # Click-based CLI tool
+│   └── utils/
+│       ├── __init__.py       # Shared helpers (format_duration, file size)
+│       └── quality.py        # Separation quality metrics
+│
+├── web/                      # Angular 21 frontend
+│   └── src/app/
+│       ├── core/             # Models, ApiService, SettingsService
+│       ├── pages/            # Home, Jobs, Settings
+│       └── shared/           # UploadArea, StemPlayer, StemList, etc.
+│
+├── uploads/                  # Uploaded files (gitignored)
+├── jobs/                     # Job output + state (gitignored)
 ├── requirements.txt          # Python dependencies
-├── AGENTS.md                 # This file
-├── AGENT_CHECKLIST.md        # Per-phase tasks
-│
-├── src/                      # Main Python code
-│   ├── __init__.py
-│   ├── core/                 # Core audio processing
-│   │   ├── __init__.py
-│   │   ├── demucs_helper.py  # Demucs integration (heavily commented)
-│   │   └── audio_io.py       # File I/O with soundfile/pydub (explained)
-│   ├── pipeline/             # Processing pipeline
-│   │   ├── __init__.py
-│   │   └── process.py        # Main processing function
-│   ├── cli/                  # CLI interface (Click-based)
-│   │   └── main.py           # Command line interface
-│   └── utils/                # Utilities
-│       ├── __init__.py       # Common helpers (format_duration, file size)
-│       └── quality.py        # Quality metrics
-│
-├── web/                      # Angular 21 web frontend
-│   ├── src/app/
-│   │   ├── core/             # Models, services (ApiService, SettingsService)
-│   │   ├── pages/            # Route-level components (home, jobs, settings)
-│   │   ├── shared/           # Reusable components (upload, player, status)
-│   │   ├── app.ts            # Shell component
-│   │   ├── app.routes.ts     # Route definitions
-│   │   └── app.config.ts     # HTTP client + router providers
-│   └── src/styles.scss       # Global CSS variables (dark theme)
-│
-├── app/                      # Demucs models cache
-│   └── models/
-│
-├── tests/                    # Test suite
-│   ├── __init__.py
-│   ├── test_audio.py
-│   ├── test_demes.py
-│   └── fixtures/             # Test audio files
-│
-├── config/                   # Configuration files
-│   ├── models.json           # Model configuration
-│   └── presets.yaml          # Audio presets
-│
-├── docs/                     # Documentation
-│   ├── tutorial/             # Step-by-step tutorials
-│   ├── api/                  # API documentation
-│   └── faq/                  # FAQ with explanations
-│
-├── docker/                   # Docker files
-│   ├── Dockerfile
-│   └── docker-compose.yml
-│
-└── logs/                     # Application logs
+├── .gitignore
+├── PRODUCT.md                # Product vision
+├── DESIGN.md                 # Design tokens & rules
+└── AGENTS.md                 # This file
 ```
 
-### Key File Explanations
+---
 
-#### README.md
+## Key Files
 
-**What**: Main user guide  
-**Why**: First thing users read  
-**Contents**: Installation, usage examples, troubleshooting  
-**Style**: Conversational, assumes no prior knowledge
-
-#### src/cli/main.py
-
-**What**: Click-based CLI tool
-**Why**: Primary user interface for splitting audio files from terminal
-**Features**: GPU detection, dry-run mode, verbose output, format/bitrate options
-
-#### web/src/app/core/services/api.service.ts
-
-**What**: Angular HTTP client for backend API calls
-**Why**: Single source of truth for all REST calls (upload, jobs, stems)
-**Features**: Typed interfaces, error handling, configurable base URL
-
-#### web/src/app/shared/stem-player/stem-player.ts
-
-**What**: Per-stem audio player component
-**Why**: Let users audition each stem before downloading
-**Features**: Play/pause, seek bar, volume, mute/solo toggles
-
-#### requirements.txt
-
-**What**: Python package dependencies  
-**Why**: Ensures everyone has same setup  
-**Style**: Well-commented dependencies
+| File | Purpose |
+|------|---------|
+| `src/cli/main.py` | CLI tool — GPU detection, dry-run, format/bitrate options |
+| `src/api/server.py` | FastAPI REST endpoints (upload, jobs, stems, models, health) |
+| `src/api/queue.py` | Job queue with GPU fallback and JSON persistence |
+| `src/pipeline/process.py` | Demucs integration — loads model, separates stems |
+| `web/src/app/core/services/api.service.ts` | Angular HTTP client — single source for all API calls |
+| `web/src/app/shared/stem-player/stem-player.ts` | Per-stem audio player with play/pause, volume, solo/mute |
 
 ---
 
-## Deliverables
+## Notes
 
-### Minimum Viable Product (Weeks 1-2)
-
-- [x] Upload audio file
-- [x] Process with Demucs
-- [x] Download vocal, drums, bass, melody stems
-- [x] Basic error handling
-- [x] CLI tool (`src/cli/main.py`)
-
-### Phase 2: Web Frontend (Weeks 3-4)
-
-- [x] Angular 21 project scaffolded (`web/`)
-- [x] Core components: UploadArea, ProcessingStatus, StemPlayer, StemList
-- [x] Routing: Home, Jobs, Settings pages
-- [x] TypeScript interfaces for API contracts
-- [ ] Backend REST API (FastAPI) — in progress
-- [ ] End-to-end upload → process → download flow
-
-### Full Version (Weeks 5-6)
-
-- [ ] All Phase 2 features
-- [ ] Quality testing suite
-- [ ] Docker container
-- [ ] Complete documentation
-- [ ] FAQ and tutorials
-
----
-
-## Notes for Beginning Development
-
-1. **Start Simple**: First version should just work, not be perfect
-2. **Test Often**: Catch issues early, learn from mistakes
-3. **Learn Together**: This is about learning as we build
-4. **Quality Over Speed**: Audio quality matters for DJing
+1. **Start simple**: First version should work, not be perfect
+2. **Test often**: Catch issues early
+3. **Quality over speed**: Audio quality matters for DJing
 
 ---
 
 ## Next Steps
 
-1. Review this AGENTS.md and project plan
-2. Build the Backend REST API (FastAPI) to serve the Angular frontend
-3. Test end-to-end: upload via web UI → process → download stems
-4. Dockerize for production deployment
-
-Let me know if you have questions about any section!
+1. Build quality testing suite
+2. Dockerize backend + frontend
+3. Write FAQ and troubleshooting guide

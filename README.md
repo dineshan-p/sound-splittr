@@ -1,59 +1,235 @@
-# 🎚️ Sound Splittr - AI Audio Stem Separator
+# 🎚️ Sound Splittr — AI Audio Stem Separator
 
-A Python-based audio stem splitter using Demucs AI to separate songs into vocals, drums, bass, and melody stems. Includes a CLI tool and an Angular web UI for DJs creating live remixes.
-
----
-
-## 📋 What Exists Currently
-
-| Component                      | Status                                |
-| ------------------------------ | ------------------------------------- |
-| Core splitting engine (Demucs) | ✅ Working                            |
-| CLI command-line tool          | ✅ Working (`src/cli/main.py`)        |
-| Angular web frontend           | ✅ Working (`web/`) — Angular 21      |
-| Unit tests                     | ✅ Implemented (`tests/unit/`)        |
-| Integration tests              | ✅ Implemented (`tests/integration/`) |
-| Docker deployment files        | ❌ Not yet set up                     |
-| Documentation/tutorials        | ✅ Contains `docs/roadmap-live-dj.md` |
+Separate any song into vocals, drums, bass, and other stems using Demucs AI. Built for DJs who need fast, reliable stem separation for live remixing and mashups.
 
 ---
 
 ## 🚀 Quick Start
 
-### Option A: CLI (Python)
+### 1. Install Python Dependencies
 
 ```bash
-# Install Python dependencies
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate        # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+```
 
-# Verify everything loads correctly
-python demo.py
+### 2. Choose Your Interface
 
-# Split a song
+| Method | Use when… |
+|--------|-----------|
+| **CLI** | You want quick terminal-based splitting, scripting, or batch processing |
+| **Web UI** | You want drag-and-drop, real-time progress, and stem playback |
+| **Both** | You want the full experience — CLI for batch, Web UI for preview |
+
+---
+
+## 🖥️ Method 1: CLI (Command Line)
+
+The CLI is a single command that splits an audio file and outputs the stems.
+
+### Basic Usage
+
+```bash
 python src/cli/main.py -i my_song.mp3 -o output/
 ```
 
-### Option B: Web UI (Angular)
+This splits `my_song.mp3` into 4 stems (vocals, drums, bass, other) in the `output/` directory as MP3 files at 320 kbps.
+
+### Full Options
 
 ```bash
-# Install Node.js dependencies (requires Node 18+)
-cd web
-npm install
-
-# Start development server with hot-reload
-ng serve
-
-# Open http://localhost:4200 in your browser
-# The UI will show a warning until the Python backend API is running
+python src/cli/main.py \
+  -i my_song.mp3 \
+  -o output/ \
+  -m htdemucs \
+  -d auto \
+  -f mp3 \
+  -b 320 \
+  -v
 ```
 
-### Option C: Full Stack (Backend + Frontend)
+### Option Reference
 
-1. Start the Python backend (see Backend API section below)
-2. Update the API URL in the web UI Settings (⚙️ top-right)
-3. Upload songs via drag-and-drop, watch real-time progress, download stems
+| Flag | Option | Default | Description |
+|------|--------|---------|-------------|
+| `-i, --input` | path | *(required)* | Input audio file (MP3, WAV, FLAC, OGG) |
+| `-o, --output` | path | *(required)* | Directory for output stems |
+| `-m, --model` | `htdemucs` \| `mdxdemucs` \| `htdemucs_6s` | `htdemucs` | Which AI model to use |
+| `-d, --device` | `auto` \| `cuda` \| `cpu` | `auto` | Hardware device (`auto` picks GPU if available) |
+| `-f, --format` | `mp3` \| `wav` \| `flac` | `mp3` | Output audio format |
+| `-b, --bitrate` | integer | `320` | MP3 bitrate in kbps (only used with `--format mp3`) |
+| `-v, --verbose` | flag | off | Show detailed processing info |
+| `--no-gpu` | flag | off | Force CPU mode even if GPU is available |
+| `--dry-run` | flag | off | Validate inputs but don't actually process |
+
+### Examples
+
+**Split a WAV file to FLAC (lossless):**
+```bash
+python src/cli/main.py -i song.wav -o stems/ -f flac
+```
+
+**Use the higher-quality MDX model:**
+```bash
+python src/cli/main.py -i song.mp3 -o stems/ -m mdxdemucs -b 320
+```
+
+**Force CPU mode (no GPU):**
+```bash
+python src/cli/main.py -i song.mp3 -o stems/ --no-gpu
+```
+
+**Validate a file before processing:**
+```bash
+python src/cli/main.py -i song.mp3 -o stems/ --dry-run
+```
+
+### Output Structure
+
+```
+output/
+├── vocals.mp3
+├── drums.mp3
+├── bass.mp3
+└── other.mp3
+```
+
+---
+
+## 🌐 Method 2: Web UI (Browser)
+
+The web UI gives you drag-and-drop uploads, real-time progress tracking, per-stem audio playback, and batch job history.
+
+### Prerequisites
+
+- Python backend running (see below)
+- Node.js 18+ installed
+- Angular CLI installed (`npm install -g @angular/cli`)
+
+### Step 1: Start the Backend API
+
+The backend is a FastAPI server that wraps the splitting pipeline.
+
+```bash
+uvicorn src.api.server:app --host 0.0.0.0 --port 8000
+```
+
+You should see:
+```
+🎚️  Sound Splittr API starting on :8000
+  GPU: 0.7GB free / 8.2GB total
+  Queue: max 5 jobs, max 2 concurrent
+```
+
+The backend exposes these endpoints:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/upload` | Upload audio + start split |
+| `GET` | `/api/jobs` | List all jobs (newest first) |
+| `GET` | `/api/jobs/:id` | Get job details with stems |
+| `DELETE` | `/api/jobs/:id` | Delete a job and its stems |
+| `GET` | `/api/stems/:jobId/:stem` | Download a single stem file |
+| `GET` | `/api/models` | Available models list |
+| `GET` | `/api/health` | Health check |
+
+### Step 2: Start the Frontend
+
+```bash
+cd web
+npm install          # Install once, or after dependencies change
+ng serve --proxy-config proxy.conf.json
+```
+
+The `proxy.conf.json` routes all `/api/*` requests to the backend at `localhost:8000`, so the frontend and backend communicate seamlessly.
+
+Open **`http://localhost:4200`** in your browser.
+
+### Step 3: Use the UI
+
+1. **Home Page** — Drag and drop an audio file (or click to browse). The UI shows GPU status and processing progress in real time.
+2. **Jobs Page** — Browse your job history. Each job shows status, progress bar, and a list of available stems.
+3. **Stem Player** — Click any stem to play it in the browser. Use play/pause, seek, volume, and mute/solo controls. Download individual stems or all stems for a job.
+4. **Settings** — Configure API URL (default `http://localhost:8000`), default model, output format, and bitrate.
+
+### Frontend Pages
+
+| Page | Route | What it does |
+|------|-------|--------------|
+| Home | `/` | Upload area, GPU status, quick settings |
+| Jobs | `/jobs` | Job history with status, progress, stem list |
+| Settings | `/settings` | API URL, model, format, bitrate configuration |
+
+### Building for Production
+
+```bash
+cd web
+ng build --configuration production
+# Output goes to dist/sound-splittr/
+```
+
+Serve the output with any static file server (nginx, Apache, `npx serve dist/sound-splittr`).
+
+---
+
+## 🔀 Full Stack: CLI + Web UI Together
+
+Run both simultaneously for the best experience:
+
+```bash
+# Terminal 1 — Backend API
+source .venv/bin/activate
+uvicorn src.api.server:app --host 0.0.0.0 --port 8000
+
+# Terminal 2 — Frontend
+cd web
+ng serve --proxy-config proxy.conf.json
+
+# Open http://localhost:4200 in your browser
+```
+
+Or use the CLI for batch processing while the UI handles preview:
+
+```bash
+# Batch process multiple files from the terminal
+for f in /path/to/songs/*.mp3; do
+  python src/cli/main.py -i "$f" -o "stems/$(basename "$f" .mp3)/"
+done
+```
+
+---
+
+## 🧪 Testing
+
+### Run All Tests
+
+```bash
+pytest tests/ -v --tb=short
+```
+
+### Run Specific Test Areas
+
+```bash
+# Unit tests only (fast)
+pytest tests/unit/ -v
+
+# Integration tests (full pipeline)
+pytest tests/integration/test_integration.py -v --tb=short
+
+# Angular unit tests
+cd web && ng test
+```
+
+---
+
+## ⚙️ Models
+
+| Model | Stems | Description | Best For |
+|-------|-------|-------------|----------|
+| `htdemucs` | 4 (vocals, drums, bass, other) | Balanced speed and quality | General purpose, live DJing |
+| `mdxdemucs` | 4 (vocals, drums, bass, other) | Higher quality, slower | Studio-grade separation |
+| `htdemucs_6s` | 6 (vocals, drums, bass, other, guitar, piano) | 6-way split | Detailed stem extraction |
 
 ---
 
@@ -61,165 +237,61 @@ ng serve
 
 ```
 sound_splittr/
-├── web/                           # Angular 21 frontend
-│   ├── src/app/
-│   │   ├── core/
-│   │   │   ├── models/           # TypeScript interfaces (Job, Stem, etc.)
-│   │   │   └── services/         # ApiService, SettingsService
-│   │   ├── pages/                # Route-level components
-│   │   │   ├── home-page/        # Upload + settings accordion
-│   │   │   ├── jobs-page/        # Job history list
-│   │   │   └── settings-page/    # Full settings view
-│   │   ├── shared/               # Reusable components
-│   │   │   ├── upload-area/      # Drag-and-drop zone
-│   │   │   ├── processing-status/# Progress ring + stage labels
-│   │   │   ├── stem-player/      # Per-stem audio player
-│   │   │   ├── stem-list/        # Grid of stem players
-│   │   │   └── settings-panel/   # API URL, model, format, bitrate
-│   │   ├── app.ts / app.html     # Shell with nav bar
-│   │   ├── app.routes.ts         # Route definitions
-│   │   └── app.config.ts         # HTTP client + router providers
-│   ├── src/styles.scss           # Global CSS variables (dark theme)
-│   └── package.json              # Node.js dependencies
+├── src/                          # Python code
+│   ├── cli/main.py               # CLI tool (Click framework)
+│   ├── api/server.py             # FastAPI REST API backend
+│   ├── api/queue.py              # Job queue and storage
+│   ├── pipeline/process.py       # Core splitting pipeline
+│   └── utils/                    # Shared helpers
 │
-├── src/                           # Python backend
-│   ├── cli/main.py               # Command-line interface (Click)
-│   ├── core/
-│   │   ├── audio_io.py           # File loading/saving with soundfile/pydub
-│   │   └── demucs_helper.py      # Demucs model management & API wrapper
-│   ├── pipeline/process.py       # Main splitting workflow orchestration
-│   └── utils/                    # Shared helpers (format_duration, file size, etc.)
-│       ├── __init__.py           # Common utility functions
-│       └── quality.py            # Audio quality metrics
+├── web/                          # Angular 21 frontend
+│   ├── proxy.conf.json           # API proxy config (dev)
+│   └── src/app/
+│       ├── pages/                # Home, Jobs, Settings
+│       ├── shared/               # Upload, Player, Status components
+│       └── core/                 # Models, API service
 │
-├── tests/
-│   ├── unit/
-│   │   ├── test_core.py          # Tests for audio_io, demucs_helper
-│   │   ├── test_pipeline.py      # Tests for process.py pipeline
-│   │   └── test_utils.py         # Unit tests for utility functions
-│   ├── integration/test_integration.py  # Full workflow end-to-end tests
-│   ├── conftest.py               # Shared pytest fixtures
-│   └── fixtures/generate.py      # Creates sample audio files
-│
-├── config/config.yaml            # Configuration: model, output format, quality
-├── demo.py                       # Standalone verification script
-├── demo_test.py                  # Full test suite
-├── requirements.txt              # Python package dependencies
-├── AGENTS.md                     # Agent roles and project instructions
-└── .gitignore                    # Git ignore patterns
+├── tests/                        # Test suite
+├── requirements.txt              # Python dependencies
+└── AGENTS.md                     # Project instructions
 ```
 
 ---
 
-## 🌐 Backend API (for Web Frontend)
+## ❓ Troubleshooting
 
-The Angular frontend expects a REST API backend. Until you build one, the UI shows a warning and works in demo mode.
+**"ModuleNotFoundError: No module named 'demucs'"**
+→ Make sure you activated the virtual environment: `source .venv/bin/activate`
 
-**Expected endpoints:**
+**"demucs.pretrained has no attribute 'get_model'"**
+→ This was a bug in an older version. Make sure you're on the latest code.
 
-| Method | Path                      | Description                              |
-| ------ | ------------------------- | ---------------------------------------- |
-| POST   | `/api/upload`             | Upload audio + start split → `{ jobId }` |
-| GET    | `/api/jobs`               | List all jobs (most recent first)        |
-| GET    | `/api/jobs/:id`           | Get one job with full details            |
-| DELETE | `/api/jobs/:id`           | Delete a job and its stem files          |
-| GET    | `/api/stems/:jobId/:stem` | Download a single stem file              |
-| GET    | `/api/health`             | Health check (`{ status: "ok" }`)        |
+**"GPU out of memory"**
+→ Use `--no-gpu` or `-d cpu` to force CPU mode. The first model download will cache to `app/models/` for faster subsequent runs.
 
-**Suggested implementation:** Build a FastAPI server that wraps `src/pipeline/process.py` and stores jobs on disk. See `web/src/app/core/services/api.service.ts` for the expected request/response shapes.
+**Frontend shows "Backend not connected"**
+→ Make sure the backend is running: `curl http://localhost:8000/api/health` should return `{"status":"ok",...}`
 
----
-
-## 🔧 Configuration File (`config/config.yaml`)
-
-Current settings in the project:
-
-```yaml
-model:
-  name: htdemucs # Demucs model choice (htdemucs, mdxdemucs, etc.)
-  device: auto # Automatically uses GPU if available, else CPU
-  num_workers: 2 # Parallel processing threads for faster splitting
-
-output:
-  format: mp3 # Output file format (mp3 or wav)
-  bitrate: 320 # Audio quality for MP3 output
-  stems: # The 4 stem outputs
-    - vocals # Lead and backing vocals
-    - drums # Drums and percussion
-    - bass # Bass guitar and low frequencies
-    - other # Everything else (melody, etc.)
-
-quality:
-  level: 1 # Speed/quality tradeoff (0=fastest, 3=highest)
-```
+**Stems are all silence or empty**
+→ Try a different model (`mdxdemucs` often works better for complex mixes). Some audio formats may need conversion first.
 
 ---
 
-## 🧪 Testing the Project
+## 📋 What's Working
 
-### Run All Tests
+| Component | Status |
+|-----------|--------|
+| Core splitting engine (Demucs 4.0+) | ✅ Working |
+| CLI tool (`src/cli/main.py`) | ✅ Working |
+| Backend REST API (`src/api/server.py`) | ✅ Working |
+| Angular 21 web frontend (`web/`) | ✅ Working |
+| End-to-end upload → process → download | ✅ Verified |
+| Unit + integration tests | ✅ Passing |
 
-```bash
-pytest tests/ -v --tb=short
-# Runs unit + integration tests with detailed output
-```
+## 📋 What's Coming
 
-### Run Specific Test Areas
-
-```bash
-# Core module imports and basic functionality
-python demo.py
-
-# Full verification suite
-cd tests && python ../demo_test.py
-
-# Unit tests only (fast)
-pytest tests/unit/ -v
-
-# Integration test with full pipeline
-pytest tests/integration/test_integration.py -v --tb=short
-```
-
-### Angular Frontend Tests
-
-```bash
-cd web
-ng test                  # Run unit tests (Vitest)
-ng build                 # Build for production → dist/sound-splittr-web/
-```
-
-**Test fixtures:**
-
-- `tests/fixtures/generate.py` — Creates sample audio files for testing
-- Tests use short clips (< 10 seconds) to avoid long wait times
-
----
-
-## 🎯 What This Project Does (Summary)
-
-Given an input file:
-
-- Takes an audio file → separates into vocals, drums, bass, other stems using Demucs AI
-- Provides a CLI tool for batch processing and automation
-- Provides a web UI (Angular) for drag-and-drop uploading and real-time progress
-- Has comprehensive unit and integration tests
-- Uses Demucs with PyTorch backend (GPU-accelerated when available)
-
-**What it doesn't do (yet):**
-
-- No Docker deployment setup
-- No backend REST API (frontend expects one — build it with FastAPI)
-- No written tutorials beyond this README
-- No example audio files included — generate them with `python tests/fixtures/generate.py`
-
----
-
-## 📖 Next Steps - What You Can Add
-
-These are **not** in the project yet, but you can implement them:
-
-1. **Backend REST API:** Build a FastAPI server wrapping `src/pipeline/process.py` to serve the Angular frontend
-2. **Docker Deployment:** Create `docker/Dockerfile` and related files for both Python backend and Angular frontend
-3. **Tutorials:** Write guides in `docs/tutorial/`
-4. **Example Audio Files:** Add sample songs to the test directory
-5. **Mock Mode:** Add a mock backend mode to the Angular UI for testing without the Python backend
+| Feature | Status |
+|---------|--------|
+| Docker deployment | ❌ Not yet |
+| Batch queue (multiple files) | Partial — single job at a time |
+| Production build pipeline | ❌ Not yet |

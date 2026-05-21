@@ -1,76 +1,62 @@
-/**
- * TypeScript interfaces for all API requests/responses.
- *
- * Keeps the frontend type-safe and makes it easy to update when the
- * backend schema changes — every consumer imports from this single file.
- */
+// TypeScript interfaces for all API requests/responses.
 
-// ─── Processing Jobs ──────────────────────────────────────────────
-
-/** Represents one upload + split job in the system. */
 export interface Job {
-	id: string; // unique job identifier (UUID)
-	fileName: string; // original audio filename
-	fileSize: number; // size in bytes
-	durationSeconds: number | null; // detected from file metadata
-	status: JobStatus; // current processing stage
-	progress: number; // 0–100 percentage
-	modelUsed: string | null; // which Demucs model was used
-	stems?: StemInfo[]; // populated once job completes
-	error?: string | null; // populated on failure
-	createdAt: string; // ISO timestamp
-	completedAt?: string | null; // ISO timestamp when finished
+	id: string;
+	fileName: string;
+	fileSize: number;
+	durationSeconds: number | null;
+	status: JobStatus;
+	progress: number;
+	modelUsed: string | null;
+	stems?: StemInfo[];
+	error?: string | null;
+	createdAt: string;
+	completedAt?: string | null;
 }
 
-/** All possible states a job can be in. */
 export type JobStatus =
-	| "queued" // waiting for processing slot
-	| "processing" // Demucs is running
-	| "completed" // all stems saved to disk
-	| "failed" // an error occurred
-	| "unknown"; // fallback
+	| "queued"
+	| "processing"
+	| "completed"
+	| "failed"
+	| "unknown";
 
-/** Metadata about one separated stem file. */
 export interface StemInfo {
-	name: string; // e.g. "vocals", "drums"
-	displayName: string; // human-readable label ("Vocals")
-	path: string; // relative server path for download
-	sizeBytes: number; // file size on disk
+	name: string;
+	displayName: string;
+	path: string;
+	sizeBytes: number;
 }
-
-// ─── Upload / Processing Requests ─────────────────────────────────
 
 export interface UploadResponse {
-	jobId: string; // ID returned immediately after upload
-	message: string; // human-readable status
+	jobId: string;
+	message: string;
+	queued?: boolean;
+	position?: number;
+	gpu?: { free_gb: number; total_gb: number; used_gb: number } | null;
+	device?: string;
 }
 
-/** Payload sent to the backend when starting a new split. */
 export interface SplitRequest {
-	model: string; // "htdemucs", "mdxdemucs", "htdemucs_6s"
-	format: OutputFormat; // "mp3", "wav", "flac"
-	bitrate?: number; // MP3 bitrate in kbps (only for mp3)
+	model: string;
+	format: OutputFormat;
+	bitrate?: number;
 }
 
-// ─── Settings / Configuration ─────────────────────────────────────
-
-/** All the user-facing settings persisted to localStorage. */
 export interface AppSettings {
-	apiUrl: string; // backend base URL, e.g. "http://localhost:8000"
-	defaultModel: string; // preferred Demucs model
+	apiUrl: string;
+	defaultModel: string;
 	defaultFormat: OutputFormat;
-	defaultBitrate: number; // kbps for MP3 output
+	defaultBitrate: number;
 }
 
-/** Allowed output audio formats. */
 export type OutputFormat = "mp3" | "wav" | "flac";
 
-/** Available Demucs models with metadata for the UI to display. */
 export interface ModelOption {
-	id: string; // matches backend model name
-	label: string; // human-readable, e.g. "HTDemucs (Balanced)"
-	description: string; // one-line explanation
-	stemCount: number; // how many stems it produces
+	id: string;
+	label: string;
+	description: string;
+	stemCount: number;
 }
 
 export const AVAILABLE_MODELS: ModelOption[] = [
@@ -94,9 +80,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
 	},
 ];
 
-/** Default settings used before the user customizes anything. */
 export const DEFAULT_SETTINGS: AppSettings = {
-	apiUrl: window.location.origin.replace(/\d+$/, "8000"), // guess :8000 API port
+	apiUrl: window.location.origin,
 	defaultModel: "htdemucs",
 	defaultFormat: "mp3",
 	defaultBitrate: 320,

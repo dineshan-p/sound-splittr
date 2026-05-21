@@ -1,20 +1,20 @@
 <div class="jobs-page">
   <header class="page-header">
-    <h1>📋 Job History</h1>
+    <h2>Job History</h2>
     <button class="btn-refresh" (click)="loadJobs()" [disabled]="loading">
-      {{ loading ? '⏳ Loading...' : '↻ Refresh' }}
+      {{ loading ? 'Loading...' : 'Refresh' }}
     </button>
   </header>
 
   <!-- No jobs state -->
   @if (!loading && jobs.length === 0) {
   <div class="empty-state">
-    <p class="empty-icon">📭</p>
+    <p class="empty-icon">⏱</p>
     <h3>No jobs yet</h3>
     <p>
       All your split jobs will appear here. Go to the Home page to create one!
     </p>
-    <a routerLink="/" class="btn-primary">Go to Home</a>
+    <button routerLink="/" class="btn-primary">Go to Home</button>
   </div>
   }
 
@@ -52,9 +52,21 @@
         <button
           class="btn-delete"
           (click)="onDelete(job.id)"
-          title="Delete job"
+          aria-label="Delete job"
         >
-          🗑️
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
       </div>
     </div>

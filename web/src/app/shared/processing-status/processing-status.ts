@@ -1,13 +1,3 @@
-/**
- * Processing-Status Component
- * ============================
- * Displays real-time progress of an audio-splitting job.
- *
- * Shows a circular or linear progress indicator, human-readable status
- * messages ("Loading model...", "Separating vocals...", etc.), and an
- * estimated time remaining based on elapsed time.
- */
-
 import { Component, input } from "@angular/core";
 import type { JobStatus } from "../../core/models";
 
@@ -15,18 +5,18 @@ export interface JobStatusInfo {
 	jobId: string;
 	fileName: string;
 	status: JobStatus;
-	progress: number; // 0–100
-	stage?: string; // e.g. "Separating vocals"
+	progress: number;
+	stage?: string;
 	error?: string;
 }
 
 const STAGE_LABELS: Record<string, string> = {
-	queued: "⏳ Queued — waiting for processing slot",
-	loading_model: "🧠 Loading Demucs model...",
-	splitting: "✂️ Separating stems...",
-	saving: "💾 Saving stem files...",
-	completed: "✅ Splitting complete!",
-	failed: "❌ Processing failed",
+	queued: "Queued — waiting for processing slot",
+	loading_model: "Loading Demucs model...",
+	splitting: "Separating stems...",
+	saving: "Saving stem files...",
+	completed: "Splitting complete!",
+	failed: "Processing failed",
 };
 
 @Component({
@@ -37,10 +27,8 @@ const STAGE_LABELS: Record<string, string> = {
 	standalone: true,
 })
 export class ProcessingStatusComponent {
-	/** Input binding from parent component. */
 	job = input.required<JobStatusInfo>();
 
-	/** Get a human-readable stage label. Falls back to status name. */
 	get stageLabel(): string {
 		const key = (this.job().stage || this.job().status)
 			.toLowerCase()
@@ -51,7 +39,6 @@ export class ProcessingStatusComponent {
 		);
 	}
 
-	/** Determine CSS class for the progress ring color. */
 	get statusClass(): string {
 		const s = this.job().status;
 		if (s === "completed") return "status-complete";
@@ -59,9 +46,9 @@ export class ProcessingStatusComponent {
 		return "status-processing";
 	}
 
-	/** Percentage formatted with one decimal. */
 	get progressFormatted(): string {
-		return `${this.job().progress.toFixed(1)}%`;
+		const p = this.job().progress;
+		return p % 1 === 0 ? `${p}%` : `${p.toFixed(1)}%`;
 	}
 }
 

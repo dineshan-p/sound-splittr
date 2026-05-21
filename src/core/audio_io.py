@@ -1,27 +1,10 @@
-"""
-Audio I/O Utility Module
-========================
-
-This module handles reading and writing audio files with proper
-format conversion, normalization, and metadata handling.
-
-Why this matters for DJs:
-- Input files can be any common format (mp3, wav, flac, ogg)
-- Output format is configurable per user preference
-- Audio quality is preserved through the separation pipeline
-
-Key concepts explained inline:
-- Sample rate : how many samples per second  (44100 = CD quality)
-- Bit depth   : precision of each sample     (16-bit, 24-bit, or float32)
-- Channels    : mono (1) vs stereo (2)
-- Bitrate     : for lossy formats like MP3   (higher = better quality)
-"""
+"""Audio I/O utility module for loading and saving audio files."""
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple
 
 import numpy as np
 import soundfile as sf
@@ -40,23 +23,16 @@ def load_audio(
     caller never has to worry about whether the input is MP3, WAV, or FLAC.
 
     Args:
-        file_path: Path to the audio file (MP3, WAV, FLAC, OGG, …).
-        sr: Target sample rate in Hz.  ``None`` keeps the native rate.
+        file_path: Path to the audio file.
+        sr: Target sample rate in Hz. ``None`` keeps the native rate.
         channels: Number of output channels – 1 for mono, 2 for stereo.
         normalize: Whether to scale the signal so its peak is at -1.0.
 
     Returns:
-        Tuple of ``(audio_array, sample_rate)`` where *audio_array* has shape
-        ``(*channels, samples)`` or ``(samples,)`` for mono.
+        Tuple of ``(audio_array, sample_rate)``.
 
     Raises:
         FileNotFoundError: If *file_path* does not exist.
-        RuntimeError: If the file cannot be decoded by soundfile.
-
-    Example::
-
-        >>> data, rate = load_audio("my_song.mp3")
-        >>> print(data.shape)  # e.g. (2, 44100 * duration_seconds)
     """
     fp = Path(file_path).resolve()
     if not fp.is_file():
@@ -64,7 +40,6 @@ def load_audio(
 
     print(f"\n📂 Loading audio: {fp}")
 
-    # soundfile reads the file into a (samples, channels) array with dtype float64
     data, orig_sr = sf.read(str(fp), always_2d=True, dtype="float32")
 
     print(f"  Format : {fp.suffix.upper()}")
@@ -72,10 +47,6 @@ def load_audio(
     print(f"  Channels : {data.shape[1]} (mono={channels==1})")
     print(f"  Duration : {len(data) / orig_sr:.2f}s")
 
-    # ------------------------------------------------------------------
-    # Resample if a specific sample rate was requested.
-    # For simplicity we use scipy which is already pulled in by librosa / soundfile.
-    # ------------------------------------------------------------------
     if sr is not None and orig_sr != sr:
         from scipy import signal as sp_signal
 
@@ -84,20 +55,11 @@ def load_audio(
         data = sp_signal.resample(data, len(data), n_samples).astype("float32")
         print(f"⚡ Resampled {orig_sr} Hz → {sr} Hz ({len(data)} samples)")
 
-    # ------------------------------------------------------------------
-    # Channel handling
-    # ------------------------------------------------------------------
     if channels == 2 and data.shape[1] == 1:
-        # Mono → stereo (duplicate)
         data = np.stack([data.ravel(), data.ravel()], axis=1)
     elif channels == 1 and data.shape[1] > 1:
-        # Stereo → mono (average of channels)
         data = data.mean(axis=1, keepdims=True)
 
-    # ------------------------------------------------------------------
-    # Normalize to prevent clipping / too-quiet signals.
-    # Audio stored as float32 in range [-1.0, 1.0].
-    # ------------------------------------------------------------------
     if normalize:
         peak = np.abs(data).max()
         if peak > 1.0:
@@ -107,7 +69,6 @@ def load_audio(
             data /= peak
             print("🔊 Normalized to prevent clipping")
 
-    # Transpose back to (samples,) or (channels, samples) for downstream use
     if channels == 1:
         data = data.ravel()
     else:
@@ -124,20 +85,9 @@ def save_audio(
     fmt: str = "wav",
     bitrate: int = 320,
 ) -> None:
-    """Save a NumPy audio array to disk.
-
-    Supports WAV (lossless PCM), MP3 (via pydub → FFmpeg), and FLAC (lossless).
-
-    Args:
-        file_path: Output path for the stem file.
-        data: Audio samples as float32 NumPy array in ``[-1, 1]`` range.
-        sr: Sample rate in Hz (default 44100 = CD quality).
-        fmt: Output format – ``'wav'``, ``'mp3'``, or ``'flac'``.
-        bitrate: MP3 encoding bitrate in kbps (only used when *fmt* == 'mp3').
-    """
+    """Save a NumPy audio array to disk."""
     fp = Path(file_path)
 
-    # Ensure parent directories exist
     if not fp.parent.exists():
         fp.parent.mkdir(parents=True, exist_ok=True)
 
@@ -154,10 +104,8 @@ def save_audio(
         print(f"  Format : FLAC (lossless float32) @ {sr} Hz")
 
     elif fmt_lower == "mp3":
-        # MP3 requires pydub which wraps FFmpeg under the hood.
         from pydub import AudioSegment
 
-        # Write a temporary WAV first because pydub can't write directly from numpy
         tmp_wav = fp.with_suffix(".tmp.wav")
         sf.write(str(tmp_wav), data.T if data.ndim > 1 else data, sr, subtype="PCM_16")
 
@@ -167,7 +115,7 @@ def save_audio(
             format="mp3",
             bitrate=f"{bitrate}k",
         )
-        tmp_wav.unlink(missing_ok=True)  # clean up temp file
+        tmp_wav.unlink(missing_ok=True)
         print(f"  Format : MP3 ({bitrate} kbps) @ {sr} Hz")
 
     else:
@@ -175,15 +123,7 @@ def save_audio(
 
 
 def get_audio_metadata(file_path: str | Path) -> dict:
-    """Read basic metadata from an audio file.
-
-    Args:
-        file_path: Path to the input audio file.
-
-    Returns:
-        Dictionary with keys ``'sample_rate'``, ``'num_frames'``,
-        ``'channels'``, and ``'duration_s'``.
-    """
+    """Read basic metadata from an audio file."""
     fp = Path(file_path).resolve()
     if not fp.is_file():
         raise FileNotFoundError(f"Audio file not found: {fp}")
@@ -200,4 +140,4 @@ def get_audio_metadata(file_path: str | Path) -> dict:
 
 
 if __name__ == "__main__":
-    print("Audio I/O module loaded. Use load_audio() and save_audio() directly.")
+    print("Audio I/O module loaded.")

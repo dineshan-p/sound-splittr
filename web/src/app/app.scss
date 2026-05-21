@@ -29,7 +29,7 @@
     text-decoration: none;
     transition: filter 0.2s ease;
 
-    &:hover { filter: brightness(1.2); }
+    &:hover { filter: brightness(1.15); }
   }
 
   // Navigation links
@@ -42,7 +42,7 @@
       color: var(--color-muted, #a0aec0);
       text-decoration: none;
       border-radius: 6px;
-      transition: all 0.15s ease;
+      transition: color 0.15s ease, background-color 0.15s ease;
 
       &:hover {
         color: var(--color-text, #e2e8f0);
@@ -50,7 +50,7 @@
       }
 
       &.active {
-        color: #fff;
+        color: #f1f5f9;
         background-color: rgba(108, 99, 255, 0.2);
       }
     }

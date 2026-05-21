@@ -1,36 +1,4 @@
-"""
-Command-Line Interface for Sound Splittr
-=========================================
-
-Usage::
-
-    # Split a single file
-    python src/cli/main.py --input song.mp3 --output output/
-
-    # Process multiple files (shell loop)
-    for f in songs/*.mp3; do
-        python src/cli/main.py -i "$f" -o "splits/$(basename "$f" .mp3)/"
-    done
-
-Options::
-
-    --help          Show this message and exit.
-    -i, --input     Path to input audio file (required).
-    -o, --output    Directory for separated stems (required).
-    -m, --model     Demucs model name  (default: htdemucs).
-    -d, --device    Hardware device – 'auto', 'cuda', 'cpu' (default: auto).
-    -f, --format    Output format – 'mp3', 'wav', or 'flac' (default: mp3).
-    -b, --bitrate   MP3 bitrate in kbps (default: 320).
-    -v, --verbose   Show detailed processing information.
-    --no-gpu        Force CPU mode even if GPU is available.
-    --dry-run       Validate inputs but do not process.
-
-Why a CLI?
-----------
-- Automate batch processing of entire music libraries
-- Use in shell scripts or Makefiles
-- Headless servers (no GUI needed)
-"""
+"""Command-line interface for Sound Splittr."""
 
 from __future__ import annotations
 
@@ -38,11 +6,6 @@ import sys
 import os
 from pathlib import Path
 
-
-# ------------------------------------------------------------------
-# Ensure the project root is on sys.path so relative imports work.
-# This allows running:  python src/cli/main.py   OR   python -m src.cli.main
-# ------------------------------------------------------------------
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
@@ -51,13 +14,9 @@ import click
 
 
 def show_gpu_status() -> None:
-    """Display GPU availability and memory in beginner-friendly terms.
-
-    Helps users know upfront whether their machine can handle the job,
-    and suggests CPU fallback when GPU memory is tight.
-    """
+    """Display GPU availability and memory."""
     try:
-        import torch  # noqa: F811 – imported for side-effect of CUDA init check
+        import torch  # noqa: F811
 
         num_gpus = torch.cuda.device_count()
         if num_gpus > 0:
@@ -81,7 +40,6 @@ def show_gpu_status() -> None:
             print("   This still works, just slower for long tracks.")
 
     except Exception as exc:
-        # If CUDA init fails (e.g. no NVIDIA driver), quietly continue with CPU
         print(f"\n⚠️  Could not query GPU status ({exc}) – assuming CPU mode")
 
 
@@ -119,38 +77,21 @@ def main(
     no_gpu: bool,
     dry_run: bool,
 ) -> None:
-    """Separate an audio file into individual stems using Demucs AI.
-
-    This is the main entry-point for command-line users.  It validates inputs,
-    optionally shows GPU status, runs the separation pipeline, and reports
-    results including stem file paths and sizes.
-    """
-    # ------------------------------------------------------------------
-    # Step 1 – Validate input file exists
-    # ------------------------------------------------------------------
+    """Separate an audio file into individual stems using Demucs AI."""
     input_path = Path(input_file).resolve()
     if not input_path.is_file():
         click.echo(f"❌ Error: Input file not found: {input_file}", err=True)
         click.echo(f"   Try: python src/cli/main.py -i song.mp3 -o output/", err=True)
         sys.exit(1)
 
-    # ------------------------------------------------------------------
-    # Step 2 – Prepare output directory
-    # ------------------------------------------------------------------
     output_path = Path(output_dir).resolve()
     if not output_path.exists():
         output_path.mkdir(parents=True, exist_ok=True)
         click.echo(f"📁 Created output directory: {output_dir}")
 
-    # ------------------------------------------------------------------
-    # Step 3 – Display GPU status (if verbose or first run)
-    # ------------------------------------------------------------------
     if verbose:
         show_gpu_status()
 
-    # ------------------------------------------------------------------
-    # Step 4 – Dry-run mode: validate everything, then exit early
-    # ------------------------------------------------------------------
     if dry_run:
         click.echo(f"\n✅ Dry-run passed!")
         click.echo(f"   Input     : {input_path.name}")
@@ -160,9 +101,6 @@ def main(
         click.echo(f"   Format    : {format} ({bitrate} kbps)")
         return
 
-    # ------------------------------------------------------------------
-    # Step 5 – Run the processing pipeline
-    # ------------------------------------------------------------------
     effective_device = "cpu" if no_gpu else device
 
     from src.pipeline.process import process_audio_file
@@ -186,9 +124,6 @@ def main(
         click.echo(f"\n❌ Processing failed: {exc}", err=True)
         sys.exit(1)
 
-    # ------------------------------------------------------------------
-    # Step 6 – Report results
-    # ------------------------------------------------------------------
     click.echo("\n" + "=" * 50)
     click.echo("✅ Processing complete!")
     click.echo("=" * 50)

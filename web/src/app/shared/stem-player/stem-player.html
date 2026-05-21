@@ -10,7 +10,7 @@
         (click)="toggleMute()"
         title="{{ isMuted() ? 'Unmute' : 'Mute' }}"
       >
-        {{ isMuted() ? '🔇' : '🔊' }}
+        {{ isMuted() ? 'Muted' : 'Mute' }}
       </button>
 
       <!-- Solo button -->
@@ -20,12 +20,12 @@
         (click)="toggleSolo()"
         title="{{ isSoloed() ? 'Un-solo' : 'Solo' }}"
       >
-        S
+        Solo
       </button>
 
       <!-- Download button -->
       <button class="ctrl-btn" (click)="onDownload()" title="Download stem">
-        ⬇️
+        DL
       </button>
     </div>
   </div>
@@ -36,7 +36,7 @@
     (click)="togglePlay()"
     [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'"
   >
-    {{ isPlaying() ? '⏸️' : '▶️' }}
+    {{ isPlaying() ? 'Pause' : 'Play' }}
   </button>
 
   <!-- Seek bar with time labels -->

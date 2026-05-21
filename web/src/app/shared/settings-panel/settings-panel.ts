@@ -1,14 +1,8 @@
-/**
- * Settings-Panel Component
- * =========================
- * A compact form panel for adjusting application settings: API URL,
- * default model, output format, and MP3 bitrate.
- */
-
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { AVAILABLE_MODELS, type OutputFormat } from "../../core/models";
-import { SettingsService } from "../../core/services/settings.service";
+import type { SettingsService } from "../../core/services/settings.service";
+import type { NotificationService } from "../../core/services/notification.service";
 
 @Component({
 	selector: "app-settings-panel",
@@ -18,7 +12,6 @@ import { SettingsService } from "../../core/services/settings.service";
 	standalone: true,
 })
 export class SettingsPanelComponent {
-	// Reactive settings — always read latest from service
 	get apiUrl(): string {
 		return this.settings.apiUrl;
 	}
@@ -47,43 +40,45 @@ export class SettingsPanelComponent {
 		this.settings.bitrate = v;
 	}
 
-	// Available models for the dropdown
 	readonly models = AVAILABLE_MODELS;
 
-	constructor(private settings: SettingsService) {
-		// Auto-save on every change thanks to the setter
-	}
+	constructor(
+		private settings: SettingsService,
+		private notifications: NotificationService,
+	) {}
 
-	/** Convert a string value to integer for the bitrate setting. */
 	parseIntValue(val: string): number {
 		return Number.parseInt(val, 10);
 	}
 
-	/** Reset everything back to factory defaults. */
-	resetToDefaults(): void {
-		if (confirm("Reset all settings to their default values?")) {
-			this.settings.reset();
+	setFormatValue(val: string): void {
+		if (val === "mp3" || val === "wav" || val === "flac") {
+			this.format = val as OutputFormat;
 		}
 	}
 
-	/** Test whether the configured API URL is reachable. */
+	resetToDefaults(): void {
+		this.settings.reset();
+		this.notifications.success("Settings reset to defaults");
+	}
+
 	async testConnection(): Promise<void> {
 		try {
-			// Use fetch since we don't have a dedicated health service yet
 			const resp = await fetch(`${this.apiUrl}/api/health`, { method: "GET" });
 			if (resp.ok) {
-				alert("✅ Backend is reachable!");
+				this.notifications.success("Backend is reachable");
 			} else {
-				alert(`⚠️  Server responded with status ${resp.status}`);
+				this.notifications.warning(
+					`Server responded with status ${resp.status}`,
+				);
 			}
 		} catch (err) {
-			alert(
-				`❌ Cannot reach backend at ${this.apiUrl}\n\nMake sure the API server is running.`,
+			this.notifications.error(
+				`Cannot reach backend at ${this.apiUrl}\nMake sure the API server is running.`,
 			);
 		}
 	}
 
-	/** Format label for the selected model. */
 	getModelLabel(id: string): string {
 		return AVAILABLE_MODELS.find((m) => m.id === id)?.label ?? id;
 	}

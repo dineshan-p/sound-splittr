@@ -24,11 +24,15 @@
 
   // Accent — primary interactive color
   --color-accent: #6c63ff;      // purple-500
+  --color-accent-hover: #7c73ff; // purple-500 hover variant
 
   // Semantic colors
   --color-success: #48bb78;     // green-500
   --color-warning: #ecc94b;     // yellow-400
   --color-error: #fc8181;       // red-400
+
+  // Typography
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
 }
 
 /* ─── Base Reset & Defaults ───────────────────────────────────────────── */
@@ -105,4 +109,16 @@ input[type="range"]::-moz-range-thumb {
 // Select dropdowns
 select {
   color-scheme: dark;
+}
+
+/* ─── Reduced Motion ──────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

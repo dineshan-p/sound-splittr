@@ -48,6 +48,11 @@
       border-color: var(--color-accent, #6c63ff);
     }
 
+    &:focus-visible {
+      outline: 2px solid var(--color-accent, #6c63ff);
+      outline-offset: 1px;
+    }
+
     &::placeholder {
       color: var(--color-muted, #718096);
     }
@@ -67,8 +72,10 @@
   .btn-test {
     align-self: flex-start;
     padding: 8px 16px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.05em;
     color: var(--color-accent, #6c63ff);
     background-color: rgba(108, 99, 255, 0.1);
     border: 1px solid rgba(108, 99, 255, 0.3);
@@ -79,13 +86,20 @@
     &:hover {
       background-color: rgba(108, 99, 255, 0.2);
     }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-accent, #6c63ff);
+      outline-offset: 1px;
+    }
   }
 
   .btn-reset {
     padding: 10px 20px;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #fc8181;
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.05em;
+    color: var(--color-error, #fc8181);
     background-color: rgba(252, 129, 129, 0.08);
     border: 1px solid rgba(252, 129, 129, 0.3);
     border-radius: 8px;
@@ -94,6 +108,11 @@
 
     &:hover {
       background-color: rgba(252, 129, 129, 0.15);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-error, #fc8181);
+      outline-offset: 1px;
     }
   }
 }

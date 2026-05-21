@@ -14,7 +14,7 @@
     justify-content: space-between;
     margin-bottom: 24px;
 
-    h1 {
+    h2 {
       margin: 0;
       font-size: 1.5rem;
       font-weight: 700;
@@ -24,12 +24,16 @@
 
   .btn-refresh {
     padding: 8px 16px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.05em;
     color: var(--color-text, #e2e8f0);
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--color-border, #4a5568);
     border-radius: 6px;
     cursor: pointer;
+    transition: background-color 0.15s ease;
 
     &:disabled {
       opacity: 0.5;
@@ -52,21 +56,31 @@
     text-align: center;
     color: var(--color-muted, #a0aec0);
 
-    .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      color: var(--color-accent, #6c63ff);
+    }
     h3 { margin: 0 0 8px; color: var(--color-text, #e2e8f0); }
 
     .btn-primary {
       display: inline-block;
       margin-top: 16px;
       padding: 10px 24px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
+      font-family: var(--font-mono, monospace);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
       color: #fff;
       background-color: var(--color-accent, #6c63ff);
+      border: none;
       border-radius: 8px;
-      text-decoration: none;
+      cursor: pointer;
+      transition: filter 0.2s ease, transform 0.1s ease;
 
       &:hover { filter: brightness(1.15); }
+      &:active { transform: scale(0.97); }
     }
   }
 
@@ -160,15 +174,28 @@
   }
 
   .btn-delete {
-    padding: 4px 8px;
-    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    color: var(--color-error, #fc8181);
     background: transparent;
-    border: none;
+    border: 1px solid rgba(252, 129, 129, 0.3);
+    border-radius: 4px;
     cursor: pointer;
     opacity: 0.6;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
 
-    &:hover { opacity: 1; }
+    svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+    }
+
+    &:hover {
+      opacity: 1;
+      background-color: rgba(252, 129, 129, 0.1);
+    }
   }
 
   @media (max-width: 768px) {
