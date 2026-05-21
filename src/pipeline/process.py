@@ -5,6 +5,8 @@ import torch
 import torchaudio
 from pathlib import Path
 
+from src.core.audio_io import save_audio
+
 
 def get_demucs_model(model_name: str = "htdemucs", device: str = "auto"):
     """Load and return a Demucs model."""
@@ -68,14 +70,12 @@ def process_audio_file(
         sources = getattr(model, 'sources', [f'stem_{i}' for i in range(len(stems))])
     print(f"  Separated into {len(sources)} stems: {sources}")
 
-    import soundfile as sf
+    # Get duration via torchaudio (already imported)
     try:
-        audio_info = sf.info(str(input_path))
-        duration = audio_info.duration
+        info = torchaudio.info(str(input_path))
+        duration = round(info.num_frames / info.sample_rate, 2)
     except Exception:
         duration = 0.0
-
-    from demucs.audio import save_audio
 
     stems_output = []
     for i, stem_name in enumerate(sources):
@@ -83,14 +83,9 @@ def process_audio_file(
         stem_filename = f"{stem_name}.{format}"
         stem_file = output_path / stem_filename
 
-        save_audio(
-            wav=stem_tensor,
-            path=stem_file,
-            samplerate=SAMPLERATE,
-            bitrate=bitrate if format == 'mp3' else 0,
-            clip='rescale',
-            bits_per_sample=24 if format != 'mp3' else 16,
-        )
+        # Convert tensor → numpy array for audio_io.save_audio
+        stem_array = stem_tensor.cpu().numpy()
+        save_audio(stem_file, stem_array, sr=SAMPLERATE, fmt=format, bitrate=bitrate)
 
         stems_output.append({
             "name": stem_name,

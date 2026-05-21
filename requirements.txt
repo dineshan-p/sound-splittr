@@ -11,6 +11,12 @@ demucs>=4.0
 # Audio I/O
 soundfile>=0.13.1
 
+# Signal processing (resampling, spectral analysis)
+scipy>=1.11.0
+
+# MP3 export
+pydub>=0.25.1
+
 # ML / AI runtime
 torch>=2.5.1
 torchaudio>=2.5.1
