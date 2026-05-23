@@ -1,8 +1,8 @@
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { AVAILABLE_MODELS, type OutputFormat } from "../../core/models";
-import type { SettingsService } from "../../core/services/settings.service";
-import type { NotificationService } from "../../core/services/notification.service";
+import { SettingsService } from "../../core/services/settings.service";
+import { NotificationService } from "../../core/services/notification.service";
 
 @Component({
 	selector: "app-settings-panel",
