@@ -1,6 +1,6 @@
 import { Injectable, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { catchError, of } from "rxjs";
+import { catchError, of, timeout } from "rxjs";
 import type { Observable } from "rxjs";
 import type { Job, ModelOption, SplitRequest, UploadResponse } from "../models";
 import { AVAILABLE_MODELS } from "../models";
@@ -45,7 +45,9 @@ export class ApiService {
 	}
 
 	listJobs(): Observable<Job[]> {
-		return this.http.get<Job[]>(`${this.baseUrl}/api/jobs`);
+		return this.http
+			.get<Job[]>(`${this.baseUrl}/api/jobs`)
+			.pipe(timeout(10_000));
 	}
 
 	deleteJob(jobId: string): Observable<void> {
