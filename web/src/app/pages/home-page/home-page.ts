@@ -55,6 +55,7 @@ export class HomePage implements OnInit, OnDestroy {
 
 	apiAvailable = false;
 	apiUrlConfigured = false;
+	apiChecked = false;
 
 	queueStatus: {
 		queue_size: number;
@@ -85,6 +86,8 @@ export class HomePage implements OnInit, OnDestroy {
 			this.apiAvailable = true;
 		} catch {
 			this.apiAvailable = false;
+		} finally {
+			this.apiChecked = true;
 		}
 	}
 
@@ -251,10 +254,6 @@ export class HomePage implements OnInit, OnDestroy {
 		if (val === "mp3" || val === "wav" || val === "flac") {
 			this.outputFormat = val as "mp3" | "wav" | "flac";
 		}
-	}
-
-	setBitrate(val: string): void {
-		this.bitrate = Number.parseInt(val, 10);
 	}
 
 	isProcessing(): boolean {

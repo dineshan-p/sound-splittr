@@ -6,7 +6,7 @@
       Separate any song into vocals, drums, bass &amp; melody stems using AI
     </p>
 
-    @if (!apiAvailable && apiUrlConfigured) {
+    @if (apiChecked && !apiAvailable && apiUrlConfigured) {
     <div class="api-warning">
       Backend API not reachable — check the URL in Settings (top-right). The
       demo will show the UI but splitting won't work until the API is running.
@@ -58,15 +58,13 @@
           <label for="home-bitrate" class="inline-label">Bitrate</label>
           <select
             id="home-bitrate"
-            #homeBitrate
-            [value]="bitrate || 320"
-            (change)="setBitrate(homeBitrate.value)"
+            [(ngModel)]="bitrate"
             class="form-select-sm"
           >
-            <option [value]="128">128k</option>
-            <option [value]="192">192k</option>
-            <option [value]="256">256k</option>
-            <option [value]="320">320k</option>
+            <option [ngValue]="128">128k</option>
+            <option [ngValue]="192">192k</option>
+            <option [ngValue]="256">256k</option>
+            <option [ngValue]="320">320k</option>
           </select>
           }
 
