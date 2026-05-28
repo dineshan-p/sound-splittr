@@ -47,6 +47,18 @@
     }
   }
 
+  // ── Error banner ─────────────────────────────────────────────────────────
+
+  .error-banner {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background-color: rgba(252, 129, 129, 0.1);
+    border: 1px solid rgba(252, 129, 129, 0.3);
+    border-radius: 8px;
+    color: var(--color-error, #fc8181);
+    font-size: 0.9rem;
+  }
+
   // ── Controls bar (search + filters) ──────────────────────────────────────
 
   .controls-bar {
@@ -165,20 +177,22 @@
     border: 1px solid rgba(108, 99, 255, 0.25);
     border-radius: 8px;
 
-    .bulk-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--color-text, #e2e8f0);
-      cursor: pointer;
-
-      input[type="checkbox"] {
+    .bulk-info {
+      .bulk-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--color-text, #e2e8f0);
         cursor: pointer;
-        accent-color: var(--color-accent, #6c63ff);
-        width: 16px;
-        height: 16px;
+
+        input[type="checkbox"] {
+          cursor: pointer;
+          accent-color: var(--color-accent, #6c63ff);
+          width: 16px;
+          height: 16px;
+        }
       }
     }
 

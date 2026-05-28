@@ -1,11 +1,10 @@
 import { Component, type OnInit, inject } from "@angular/core";
-import { lastValueFrom } from "rxjs";
 import { RouterLink } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
 import { NotificationService } from "../../core/services/notification.service";
 import type { Job } from "../../core/models";
 
-export type JobStatusFilter = "all" | Job["status"];
+export type StatusFilter = "all" | Job["status"];
 
 @Component({
 	selector: "app-jobs-page",
@@ -20,15 +19,34 @@ export class JobsPage implements OnInit {
 
 	jobs: Job[] = [];
 	loading = true;
+	error: string | null = null;
 
-	// Search & filter
 	searchQuery = "";
-	statusFilter: JobStatusFilter = "all";
+	statusFilter: StatusFilter = "all";
+	selectedIds = new Set<string>();
 
-	// Bulk selection
-	selectedJobIds = new Set<string>();
+	ngOnInit(): void {
+		this.loadJobs();
+	}
 
-	// Derived
+	loadJobs(): void {
+		this.loading = true;
+		this.error = null;
+		this.api.listJobs().subscribe({
+			next: (data) => {
+				this.jobs = data;
+				this.loading = false;
+			},
+			error: () => {
+				this.error =
+					"Failed to load job history. The backend may not be running.";
+				this.jobs = [];
+				this.loading = false;
+				this.notifications.error(this.error);
+			},
+		});
+	}
+
 	get filteredJobs(): Job[] {
 		return this.jobs.filter((job) => {
 			const matchesSearch =
@@ -43,119 +61,125 @@ export class JobsPage implements OnInit {
 	get isAllSelected(): boolean {
 		return (
 			this.filteredJobs.length > 0 &&
-			this.filteredJobs.every((j) => this.selectedJobIds.has(j.id))
+			this.filteredJobs.every((j) => this.selectedIds.has(j.id))
 		);
 	}
 
 	get isSomeSelected(): boolean {
-		const selectedInFiltered = this.filteredJobs.filter((j) =>
-			this.selectedJobIds.has(j.id),
-		);
-		return selectedInFiltered.length > 0 && !this.isAllSelected;
+		const count = this.filteredJobs.filter((j) =>
+			this.selectedIds.has(j.id),
+		).length;
+		return count > 0 && count < this.filteredJobs.length;
 	}
 
 	get selectedCount(): number {
-		// Count all selected, not just in current filter
-		return this.selectedJobIds.size;
+		return this.selectedIds.size;
 	}
 
-	ngOnInit(): void {
-		this.loadJobs();
-	}
-
-	async loadJobs(): Promise<void> {
-		this.loading = true;
-		try {
-			const jobs = await lastValueFrom(this.api.listJobs(), {
-				defaultValue: [],
-			});
-			this.jobs = jobs;
-		} catch (err) {
-			this.notifications.error(
-				"Failed to load job history. The backend may not be running.",
-			);
-			this.jobs = [];
-		} finally {
-			this.loading = false;
+	get statusCounts(): Record<string, number> {
+		const counts: Record<string, number> = {};
+		for (const job of this.jobs) {
+			counts[job.status] = (counts[job.status] ?? 0) + 1;
 		}
+		return counts;
 	}
 
-	// --- Search & filter ---
+	get statusFilterOptions(): {
+		label: string;
+		value: StatusFilter;
+		count: number;
+	}[] {
+		const counts = this.statusCounts;
+		return [
+			{ label: "All", value: "all", count: this.jobs.length },
+			{ label: "Queued", value: "queued", count: counts["queued"] ?? 0 },
+			{
+				label: "Processing",
+				value: "processing",
+				count: counts["processing"] ?? 0,
+			},
+			{
+				label: "Completed",
+				value: "completed",
+				count: counts["completed"] ?? 0,
+			},
+			{ label: "Failed", value: "failed", count: counts["failed"] ?? 0 },
+		];
+	}
 
 	onSearchInput(event: Event): void {
 		this.searchQuery = (event.target as HTMLInputElement).value;
-		this.clearSelection();
+		this.selectedIds.clear();
 	}
 
-	onStatusFilter(status: JobStatusFilter): void {
-		this.statusFilter = status;
-		this.clearSelection();
+	onStatusFilter(value: StatusFilter): void {
+		this.statusFilter = value;
+		this.selectedIds.clear();
 	}
-
-	// --- Bulk selection ---
 
 	toggleSelectAll(): void {
 		if (this.isAllSelected) {
-			this.filteredJobs.forEach((j) => this.selectedJobIds.delete(j.id));
+			this.filteredJobs.forEach((j) => this.selectedIds.delete(j.id));
 		} else {
-			this.filteredJobs.forEach((j) => this.selectedJobIds.add(j.id));
+			this.filteredJobs.forEach((j) => this.selectedIds.add(j.id));
 		}
 	}
 
 	toggleSelect(jobId: string): void {
-		if (this.selectedJobIds.has(jobId)) {
-			this.selectedJobIds.delete(jobId);
+		if (this.selectedIds.has(jobId)) {
+			this.selectedIds.delete(jobId);
 		} else {
-			this.selectedJobIds.add(jobId);
+			this.selectedIds.add(jobId);
 		}
 	}
 
 	clearSelection(): void {
-		this.selectedJobIds.clear();
+		this.selectedIds.clear();
 	}
-
-	// --- Actions ---
 
 	async onDelete(jobId: string): Promise<void> {
 		const confirmed = await this.notifications.confirm(
 			"Delete this job and all its stem files?",
 		);
 		if (!confirmed) return;
-		try {
-			await lastValueFrom(this.api.deleteJob(jobId));
-			this.jobs = this.jobs.filter((j) => j.id !== jobId);
-			this.selectedJobIds.delete(jobId);
-			this.notifications.success("Job deleted");
-		} catch (err) {
-			this.notifications.error(`Failed to delete: ${err}`);
-		}
+		this.api.deleteJob(jobId).subscribe({
+			next: () => {
+				this.jobs = this.jobs.filter((j) => j.id !== jobId);
+				this.selectedIds.delete(jobId);
+				this.notifications.success("Job deleted");
+			},
+			error: (err) => this.notifications.error(`Failed to delete: ${err}`),
+		});
 	}
 
 	async onBulkDelete(): Promise<void> {
-		const count = this.selectedJobIds.size;
+		const count = this.selectedIds.size;
 		const confirmed = await this.notifications.confirm(
 			`Delete ${count} job${count > 1 ? "s" : ""} and all their stem files?`,
 		);
 		if (!confirmed) return;
 
 		let deleted = 0;
-		for (const jobId of this.selectedJobIds) {
-			try {
-				await lastValueFrom(this.api.deleteJob(jobId));
-				this.jobs = this.jobs.filter((j) => j.id !== jobId);
-				deleted++;
-			} catch {
-				// Skip failed deletions, continue with others
-			}
+		for (const jobId of this.selectedIds) {
+			await new Promise<void>((resolve) => {
+				this.api.deleteJob(jobId).subscribe({
+					next: () => {
+						this.jobs = this.jobs.filter((j) => j.id !== jobId);
+						deleted++;
+						resolve();
+					},
+					error: () => resolve(),
+				});
+			});
 		}
 
-		this.selectedJobIds.clear();
+		this.selectedIds.clear();
 		if (deleted > 0) {
-			this.notifications.success(`Deleted ${deleted} job${deleted > 1 ? "s" : ""}`);
+			this.notifications.success(
+				`Deleted ${deleted} job${deleted > 1 ? "s" : ""}`,
+			);
 		}
 	}
-
-	// --- Helpers ---
 
 	getStatusClass(status: string): string {
 		const map: Record<string, string> = {
@@ -169,13 +193,12 @@ export class JobsPage implements OnInit {
 
 	formatRelative(isoString: string): string {
 		const diff = Date.now() - new Date(isoString).getTime();
-		const mins = Math.floor(diff / 60_000);
+		const mins = Math.floor(diff / 60000);
 		if (mins < 1) return "just now";
 		if (mins < 60) return `${mins}m ago`;
 		const hrs = Math.floor(mins / 60);
 		if (hrs < 24) return `${hrs}h ago`;
-		const days = Math.floor(hrs / 24);
-		return `${days}d ago`;
+		return `${Math.floor(hrs / 24)}d ago`;
 	}
 
 	getStemCount(job: Job): number {
@@ -186,7 +209,6 @@ export class JobsPage implements OnInit {
 		return s.charAt(0).toUpperCase() + s.slice(1);
 	}
 
-	// Format duration in a cleaner way
 	formatDuration(seconds: number): string {
 		const mins = Math.floor(seconds / 60);
 		const secs = Math.round(seconds % 60);
@@ -196,7 +218,6 @@ export class JobsPage implements OnInit {
 		return `${secs}s`;
 	}
 
-	// Get status icon SVG
 	getStatusIcon(status: string): string {
 		switch (status) {
 			case "queued":
@@ -210,27 +231,5 @@ export class JobsPage implements OnInit {
 			default:
 				return "";
 		}
-	}
-
-	// Status filter options
-	get statusFilters(): { label: string; value: JobStatusFilter; count: number }[] {
-		const counts: Record<string, number> = {};
-		for (const job of this.jobs) {
-			counts[job.status] = (counts[job.status] ?? 0) + 1;
-		}
-		return [
-			{ label: "All", value: "all", count: this.jobs.length },
-			{ label: "Queued", value: "queued", count: counts["queued"] ?? 0 },
-			{ label: "Processing", value: "processing", count: counts["processing"] ?? 0 },
-			{ label: "Completed", value: "completed", count: counts["completed"] ?? 0 },
-			{ label: "Failed", value: "failed", count: counts["failed"] ?? 0 },
-		];
-	}
-
-	// Escape HTML for safe rendering
-	escapeHtml(text: string): string {
-		const div = document.createElement("div");
-		div.textContent = text;
-		return div.innerHTML;
 	}
 }

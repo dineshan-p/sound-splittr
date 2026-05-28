@@ -7,7 +7,12 @@
     </button>
   </header>
 
-  <!-- Search & filter bar -->
+  <!-- Error banner -->
+  @if (error) {
+  <div class="error-banner">{{ error }}</div>
+  }
+
+  <!-- Controls: search + filter pills -->
   @if (!loading) {
   <div class="controls-bar">
     <div class="search-wrapper">
@@ -57,16 +62,15 @@
     </div>
 
     <div class="status-filters">
-      @for (filter of statusFilters; track filter.value) {
+      @for (opt of statusFilterOptions; track opt.value) {
       <button
         class="filter-pill"
-        [class.active]="statusFilter === filter.value"
-        (click)="onStatusFilter(filter.value)"
-        [attr.aria-pressed]="statusFilter === filter.value"
+        [class.active]="statusFilter === opt.value"
+        (click)="onStatusFilter(opt.value)"
+        [attr.aria-pressed]="statusFilter === opt.value"
       >
-        {{ filter.label }}
-        @if (filter.count > 0) {
-        <span class="filter-count">{{ filter.count }}</span>
+        {{ opt.label }} @if (opt.count > 0) {
+        <span class="filter-count">{{ opt.count }}</span>
         }
       </button>
       }
@@ -100,7 +104,9 @@
         stroke-linejoin="round"
       >
         <polyline points="3 6 5 6 21 6" />
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        <path
+          d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+        />
       </svg>
       Delete {{ selectedCount }}
     </button>
@@ -108,7 +114,7 @@
   </div>
   }
 
-  <!-- No jobs state -->
+  <!-- Empty state: no jobs at all -->
   @if (!loading && jobs.length === 0) {
   <div class="empty-state">
     <p class="empty-icon">⏱</p>
@@ -119,22 +125,22 @@
     </p>
     <button routerLink="/" class="btn-primary">Go to Home</button>
   </div>
-  } @else if (!loading && filteredJobs.length === 0) {
-  <!-- Filtered out state -->
+  }
+
+  <!-- Empty state: filtered results -->
+  @if (!loading && jobs.length > 0 && filteredJobs.length === 0) {
   <div class="empty-state filtered">
     <p class="empty-icon">🔍</p>
     <h3>No matching jobs</h3>
     <p>
-      @if (searchQuery && statusFilter === "all") {
-      No jobs match "<strong>{{ searchQuery }}</strong>". Try a different
-      search.
-      } @else if (statusFilter !== "all" && !searchQuery) {
-      No jobs with status "<strong
-        >{{ statusFilters.find((f) => f.value === statusFilter)?.label }}</strong
-      >".
-      } @else {
-      No jobs match your search and filter. Try adjusting your criteria.
-      }
+      @if (searchQuery && statusFilter === 'all') { No jobs match "<strong
+        >{{ searchQuery }}</strong
+      >". Try a different search. } @else if (statusFilter !== 'all' &&
+      !searchQuery) { No jobs with status "<strong
+        >{{ statusFilterOptions.find(f => f.value === statusFilter)?.label
+        }}</strong
+      >". } @else { No jobs match your search and filter. Try adjusting your
+      criteria. }
     </p>
   </div>
   }
@@ -146,14 +152,13 @@
     <div
       class="job-card"
       [class]="getStatusClass(job.status)"
-      [class.selected]="selectedJobIds.has(job.id)"
+      [class.selected]="selectedIds.has(job.id)"
     >
       <!-- Checkbox -->
       <div class="job-checkbox">
         <input
           type="checkbox"
-          [checked]="selectedJobIds.has(job.id)"
-          [indeterminate]="false"
+          [checked]="selectedIds.has(job.id)"
           (change)="toggleSelect(job.id)"
           aria-label="Select job"
         />
@@ -161,22 +166,20 @@
 
       <!-- Job info -->
       <div class="job-info">
-        <span class="job-filename" [attr.title]="job.fileName">{{
-          job.fileName
-        }}</span>
+        <span class="job-filename" [title]="job.fileName"
+          >{{ job.fileName }}</span
+        >
         <span class="job-meta">
           <span class="meta-item">{{ formatRelative(job.createdAt) }}</span>
           @if (job.durationSeconds) {
           <span class="meta-divider">·</span>
-          <span class="meta-item">{{
-            formatDuration(job.durationSeconds)
-          }}</span>
-          }
-          @if (getStemCount(job) > 0) {
+          <span class="meta-item"
+            >{{ formatDuration(job.durationSeconds) }}</span
+          >
+          } @if (getStemCount(job) > 0) {
           <span class="meta-divider">·</span>
           <span class="meta-item">{{ getStemCount(job) }} stems</span>
-          }
-          @if (job.modelUsed) {
+          } @if (job.modelUsed) {
           <span class="meta-divider">·</span>
           <span class="meta-item">{{ job.modelUsed }}</span>
           }
@@ -185,13 +188,16 @@
 
       <!-- Actions -->
       <div class="job-actions">
-        <!-- Status badge -->
+        <!-- Status badge with icon -->
         <span class="status-badge" [class]="getStatusClass(job.status)">
-          <span class="status-icon" [innerHTML]="getStatusIcon(job.status)"></span>
+          <span
+            class="status-icon"
+            [innerHTML]="getStatusIcon(job.status)"
+          ></span>
           {{ capitalize(job.status) }}
         </span>
 
-        <!-- Progress bar for in-progress jobs -->
+        <!-- Progress bar -->
         @if (job.progress > 0 && job.progress < 100) {
         <div class="mini-progress">
           <div class="mini-bar" [style.width.%]="job.progress"></div>
@@ -200,11 +206,7 @@
 
         <!-- Error message -->
         @if (job.error) {
-        <span
-          class="job-error"
-          [attr.title]="job.error"
-          [innerHTML]="escapeHtml(job.error)"
-        ></span>
+        <span class="job-error" [title]="job.error">{{ job.error }}</span>
         }
 
         <!-- Delete button -->
