@@ -1,3 +1,11 @@
+]133;A\/**
+ * Home Page Styles
+ * =================
+ * Two-column layout: upload area (left) + stem results (right).
+ * Includes the hero header, settings accordion, queue status badge,
+ * and the empty-state feature cards shown when no stems exist yet.
+ */
+
 .home-page {
   display: flex;
   flex-direction: column;

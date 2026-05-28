@@ -1,4 +1,4 @@
-import {
+]133;A\]133;A\import {
 	Component,
 	input,
 	output,
@@ -69,6 +69,10 @@ export class StemPlayerComponent implements AfterViewInit, OnDestroy {
 
 	private play(): void {
 		if (!this.audio) return;
+		// Notify other stem-player instances so they can pause themselves.
+		// We use CustomEvent on document instead of a shared service to keep
+		// the component self-contained — each player broadcasts its own identity
+		// and listens for the "pause-other" signal.
 		document.dispatchEvent(
 			new CustomEvent("stem-pause-other", { detail: this.stem().name }),
 		);
@@ -124,8 +128,11 @@ export class StemPlayerComponent implements AfterViewInit, OnDestroy {
 		this.isSoloed.set(!wasSoloed);
 
 		if (!wasSoloed) {
+			// When soloing, pause every other player and broadcast the event
+			// so they know to stop.
 			document.dispatchEvent(new CustomEvent("stem-pause-all"));
 		} else {
+			// When un-soloing, resume the previously-playing player.
 			document.dispatchEvent(new CustomEvent("resume-previous"));
 		}
 	}

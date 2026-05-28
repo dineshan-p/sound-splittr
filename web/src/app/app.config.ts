@@ -1,3 +1,9 @@
+/**
+ * App configuration — providers and router setup.
+ *
+ * Loaded once by main.ts to bootstrap the Angular application.
+ * HTTP client is provided globally so every service can make API calls.
+ */
 import {
 	type ApplicationConfig,
 	provideBrowserGlobalErrorListeners,

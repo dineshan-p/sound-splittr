@@ -1,4 +1,4 @@
-"""Main audio processing pipeline for stem separation."""
+]133;A\]133;A\]133;A\"""Main audio processing pipeline for stem separation."""
 
 import os
 import torch
@@ -44,14 +44,19 @@ def process_audio_file(
 
     from demucs.separate import load_track
 
-    SAMPLERATE = 44100
-    AUDIO_CHANNELS = 2
+    SAMPLERATE = 44100  # Demucs default; matches most music content
+    AUDIO_CHANNELS = 2  # stereo; Demucs expects 2-channel input
     track = load_track(str(input_path), AUDIO_CHANNELS, SAMPLERATE)
     track = track.unsqueeze(0)
     print(f"  Audio loaded: {track.shape} @ {SAMPLERATE}Hz")
 
     from demucs.apply import apply_model
 
+    # Inference parameters — tune these to trade quality for speed:
+    #   shifts=1:   1 = no time-reversal averaging; use 2-4 for better quality
+    #   split=True: process in chunks to fit large tracks in GPU memory
+    #   overlap=0.25: 25% overlap between chunks reduces edge artifacts
+    #   transition_power=1.0: smooths the join at chunk boundaries (higher = smoother)
     stems = apply_model(
         model,
         track,
@@ -70,7 +75,6 @@ def process_audio_file(
         sources = getattr(model, 'sources', [f'stem_{i}' for i in range(len(stems))])
     print(f"  Separated into {len(sources)} stems: {sources}")
 
-    # Get duration via torchaudio (already imported)
     try:
         info = torchaudio.info(str(input_path))
         duration = round(info.num_frames / info.sample_rate, 2)

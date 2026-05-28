@@ -1,3 +1,7 @@
+/**
+ * Application bootstrap — initializes Angular with the root component and
+ * its configuration (providers, router, HTTP client).
+ */
 import { bootstrapApplication } from "@angular/platform-browser";
 import { appConfig } from "./app/app.config";
 import { AppComponent } from "./app/app";

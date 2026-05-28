@@ -23,7 +23,11 @@ init_queue(jobs_dir=str(JOBS_DIR))
 
 
 def _job_to_dict(job) -> dict[str, Any]:
-    """Convert a Job dataclass to a JSON-serializable dict."""
+    """Convert a Job dataclass to a JSON-serializable dict.
+
+    Field names are camelCase to match the TypeScript interfaces expected
+    by the Angular frontend (Job, StemInfo, etc.).
+    """
     return {
         "id": job.id,
         "fileName": job.file_name,
@@ -40,7 +44,11 @@ def _job_to_dict(job) -> dict[str, Any]:
 
 
 def _validate_format(fmt: str) -> str:
-    """Validate and normalize output format."""
+    """Validate and normalize output format.
+
+    Rejects anything other than mp3, wav, or flac with a 400 error.
+    Returns the lowercased, stripped format string for downstream use.
+    """
     fmt = fmt.lower().strip()
     if fmt not in ("mp3", "wav", "flac"):
         raise HTTPException(400, f"Invalid format '{fmt}'. Must be mp3, wav, or flac.")
@@ -48,7 +56,11 @@ def _validate_format(fmt: str) -> str:
 
 
 def _validate_model(model: str) -> str:
-    """Validate model name."""
+    """Validate model name against the list of known Demucs models.
+
+    Raises 400 if the model is not one of htdemucs, mdxdemucs, or htdemucs_6s.
+    Returns the lowercased, stripped model name.
+    """
     model = model.lower().strip()
     valid = {"htdemucs", "mdxdemucs", "htdemucs_6s"}
     if model not in valid:
@@ -58,7 +70,18 @@ def _validate_model(model: str) -> str:
 
 @app.get("/api/health")
 async def health_check():
-    """Health check endpoint. Returns queue stats and GPU info."""
+    """Health check endpoint.
+
+    Returns queue statistics and GPU memory status.
+    Used by the frontend to display the queue panel on the home page.
+
+    Response:
+        status: "ok"
+        queue_size: number of jobs waiting
+        active_count: number of jobs currently processing
+        total_jobs: total jobs in the system
+        gpu: free/total/used GPU memory (null if no GPU)
+    """
     queue = get_queue()
     stats = await queue.get_stats()
     return {"status": "ok", **stats}
@@ -71,7 +94,25 @@ async def upload_audio(
     format: str = Form("mp3"),
     bitrate: int = Form("320"),
 ):
-    """Upload an audio file and start splitting into stems."""
+    """Upload an audio file and enqueue it for stem separation.
+
+    Accepts MP3, WAV, FLAC, OGG, M4A, AAC, WMA. The file is saved to
+    ``uploads/`` and a Job is created in the queue. Processing starts
+    immediately if GPU memory is available; otherwise the job waits in
+    the queue.
+
+    Request body:
+        file: audio file (multipart/form-data)
+        model: one of htdemucs, mdxdemucs, htdemucs_6s
+        format: mp3, wav, or flac
+        bitrate: MP3 encoding bitrate in kbps (only used when format=mp3)
+
+    Response:
+        jobId: unique job identifier
+        queued: true if the job is waiting, false if processing started
+        position: queue position (only when queued=true)
+        gpu: current GPU memory status
+    """
     output_format = _validate_format(format)
     model_name = _validate_model(model)
 
@@ -127,14 +168,28 @@ async def upload_audio(
 
 @app.get("/api/jobs")
 async def list_jobs():
-    """List all jobs, most recent first."""
+    """List all jobs, most recent first.
+
+    Used by the Jobs page to populate the job history table.
+    Returns a JSON array of job objects sorted by creation time descending.
+    """
     jobs = await get_queue().list_jobs()
     return [_job_to_dict(j) for j in jobs]
 
 
 @app.get("/api/jobs/{job_id}")
 async def get_job(job_id: str):
-    """Get a single job's details."""
+    """Get a single job's details.
+
+    Used for polling the active job on the home page and for displaying
+    job details on the Jobs page.
+
+    Args:
+        job_id: the job's unique identifier.
+
+    Returns:
+        Job details including progress, stems, and error message (if any).
+    """
     job = await get_queue().get_job(job_id)
     if job is None:
         raise HTTPException(404, f"Job '{job_id}' not found")
@@ -143,7 +198,11 @@ async def get_job(job_id: str):
 
 @app.delete("/api/jobs/{job_id}")
 async def delete_job(job_id: str):
-    """Delete a job and all its stem files."""
+    """Delete a job and all its generated stem files.
+
+    Removes the job record, its JSON state file, and all output stem
+    files from disk. Safe to call for jobs in any state.
+    """
     deleted = await get_queue().delete_job(job_id)
     if not deleted:
         raise HTTPException(404, f"Job '{job_id}' not found")
@@ -152,7 +211,15 @@ async def delete_job(job_id: str):
 
 @app.get("/api/stems/{job_id}/{stem_name}")
 async def download_stem(job_id: str, stem_name: str):
-    """Download a specific stem file for a job."""
+    """Stream a completed stem file back to the client.
+
+    The frontend uses this URL for per-stem downloads and for the
+    ``<audio>`` source in the StemPlayer component.
+
+    Args:
+        job_id: the job that produced this stem.
+        stem_name: one of vocals, drums, bass, other (or the 6-stem names).
+    """
     job = await get_queue().get_job(job_id)
     if job is None:
         raise HTTPException(404, f"Job '{job_id}' not found")
@@ -178,7 +245,11 @@ async def download_stem(job_id: str, stem_name: str):
 
 @app.get("/api/models")
 async def list_models():
-    """List available Demucs models with metadata."""
+    """List available Demucs models with metadata.
+
+    Returns a JSON array of model options (id, label, description, stemCount).
+    Used by the frontend to populate the model selector dropdown.
+    """
     from src.core.demucs_helper import ModelInfo
 
     models = []
@@ -194,7 +265,11 @@ async def list_models():
 
 @app.on_event("startup")
 async def startup():
-    """Log startup info."""
+    """Log startup info when the FastAPI server starts.
+
+    Prints GPU availability and queue configuration to the console.
+    This runs once when the server process boots.
+    """
     from src.api.queue import get_gpu_memory_info
 
     gpu = get_gpu_memory_info()

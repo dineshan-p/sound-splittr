@@ -1,3 +1,10 @@
+/**
+ * Processing status component — shows the current job's progress bar,
+ * stage label, and status icon.
+ *
+ * The stage labels are mapped from backend stage names (snake_case) to
+ * human-readable strings via the STAGE_LABELS constant.
+ */
 import { Component, input } from "@angular/core";
 import type { JobStatus } from "../../core/models";
 
@@ -10,6 +17,7 @@ export interface JobStatusInfo {
 	error?: string;
 }
 
+/** Maps backend stage names to human-readable labels. */
 const STAGE_LABELS: Record<string, string> = {
 	queued: "Queued — waiting for processing slot",
 	loading_model: "Loading Demucs model...",
@@ -52,6 +60,7 @@ export class ProcessingStatusComponent {
 	}
 }
 
+/** Capitalize the first letter of a string (e.g. "failed" → "Failed"). */
 function capitalize(s: string): string {
 	return s.charAt(0).toUpperCase() + s.slice(1);
 }

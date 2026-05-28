@@ -1,4 +1,4 @@
-"""Job queue with GPU protection and JSON persistence."""
+]133;A\]133;A\]133;A\"""Job queue with GPU protection and JSON persistence."""
 
 from __future__ import annotations
 
@@ -14,7 +14,12 @@ import torch
 
 
 def _serialize_job(job: Job) -> dict:
-    """Convert a Job to a JSON-serializable dict."""
+    """Convert a Job to a JSON-serializable dict.
+
+    We manually override fields that ``asdict`` handles incorrectly:
+    - Path objects need str() conversion
+    - datetime objects need isoformat()
+    """
     d = asdict(job)
     d["input_path"] = str(job.input_path)
     d["output_dir"] = str(job.output_dir)
@@ -83,7 +88,13 @@ def get_gpu_memory_info() -> dict[str, float] | None:
 
 
 class JobQueue:
-    """In-memory cache with JSON file persistence."""
+    """In-memory cache with JSON file persistence.
+
+    Queue limits are tuned for a typical workstation GPU:
+    - MAX_QUEUE_SIZE = 5: prevents disk I/O from overwhelming the queue
+    - MAX_CONCURRENT = 2: leaves headroom for GPU memory across two models
+    - MIN_GPU_MEMORY_GB = 3.0: htdemucs needs ~2.5 GB; we keep a safety margin
+    """
 
     MAX_QUEUE_SIZE = 5
     MAX_CONCURRENT = 2
@@ -183,6 +194,7 @@ class JobQueue:
         try:
             print(f"[Job {job_id}] Starting: {job.file_name}")
 
+            # Progress milestones: 10=loading, 20=model loaded, 90=processing done, 100=complete
             job.progress = 10
             self._save_job_to_disk(job)
 

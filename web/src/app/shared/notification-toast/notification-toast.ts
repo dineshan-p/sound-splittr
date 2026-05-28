@@ -1,3 +1,12 @@
+/**
+ * Notification toast component — displays the active notification from
+ * NotificationService as a floating card in the top-right corner.
+ *
+ * The toast auto-dismisses after the configured duration (set by the
+ * service); the user can also dismiss it manually via the × button.
+ * Only one notification is shown at a time — a new one replaces the
+ * current toast.
+ */
 import { Component, inject } from "@angular/core";
 import { NotificationService } from "../../core/services/notification.service";
 
@@ -100,6 +109,7 @@ export class NotificationToastComponent {
 	private notifications = inject(NotificationService);
 	notification = this.notifications.current;
 
+	/** Build the CSS class for the toast's color theme (e.g. "type-error"). */
 	get toastClass(): string {
 		return `type-${this.notification()?.type ?? "info"}`;
 	}

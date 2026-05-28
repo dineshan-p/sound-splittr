@@ -22,6 +22,10 @@ def load_audio(
     range ``[-1.0, 1.0]``. This function handles format conversion so the
     caller never has to worry about whether the input is MP3, WAV, or FLAC.
 
+    The normalization step scales the signal so its peak amplitude reaches
+    -1.0, preventing clipping during AI processing. Silent tracks (peak <
+    0.001) are skipped to avoid division by near-zero.
+
     Args:
         file_path: Path to the audio file.
         sr: Target sample rate in Hz. ``None`` keeps the native rate.
@@ -66,6 +70,8 @@ def load_audio(
             print(f"⚠️  Clipping detected (peak={peak:.3f}) – hard-clamping")
             data = np.clip(data, -1.0, 1.0)
         elif peak > 0.001:
+            # Threshold of 0.001 avoids dividing by near-zero values on silent
+            # tracks while still catching genuinely quiet audio that needs scaling.
             data /= peak
             print("🔊 Normalized to prevent clipping")
 
@@ -85,7 +91,23 @@ def save_audio(
     fmt: str = "wav",
     bitrate: int = 320,
 ) -> None:
-    """Save a NumPy audio array to disk."""
+    """Save a NumPy audio array to disk in the specified format.
+
+    Handles WAV (lossless PCM), FLAC (lossless float32), and MP3 (lossy,
+    via pydub). For MP3 output, the function writes a temporary WAV file
+    then encodes it — this two-step process is needed because soundfile
+    does not support MP3 encoding natively.
+
+    Args:
+        file_path: Where to write the output file.
+        data: Audio data as a NumPy array (float32, values in [-1, 1]).
+        sr: Sample rate in Hz (default: 44100).
+        fmt: Output format — "wav", "flac", or "mp3".
+        bitrate: MP3 encoding bitrate in kbps (only used when fmt="mp3").
+
+    Raises:
+        ValueError: If *fmt* is not one of wav, flac, or mp3.
+    """
     fp = Path(file_path)
 
     if not fp.parent.exists():
@@ -123,7 +145,20 @@ def save_audio(
 
 
 def get_audio_metadata(file_path: str | Path) -> dict:
-    """Read basic metadata from an audio file."""
+    """Read basic metadata from an audio file using torchaudio.
+
+    Extracts sample rate, frame count, channel count, and duration.
+    This is used by the API to populate job metadata before processing.
+
+    Args:
+        file_path: Path to the audio file.
+
+    Returns:
+        Dict with keys: sample_rate, num_frames, channels, duration_s.
+
+    Raises:
+        FileNotFoundError: If *file_path* does not exist.
+    """
     fp = Path(file_path).resolve()
     if not fp.is_file():
         raise FileNotFoundError(f"Audio file not found: {fp}")

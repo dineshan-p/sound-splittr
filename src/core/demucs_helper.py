@@ -1,4 +1,4 @@
-"""Demucs integration module — model metadata and loading."""
+]133;A\"""Demucs integration module — model metadata and loading."""
 
 from __future__ import annotations
 
@@ -38,7 +38,11 @@ def get_available_models() -> Dict[str, Dict]:
 
 
 def get_model(model_name: str = "htdemucs", device: str = "auto") -> torch.nn.Module:
-    """Load and return a Demucs model ready for inference."""
+    """Load and return a Demucs model ready for inference.
+
+    Convenience wrapper for the API layer — duplicates the device auto-detection
+    logic from ``process.py`` so the API endpoint can load models independently.
+    """
     import demucs
 
     if device == "auto":

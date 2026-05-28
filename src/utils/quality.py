@@ -1,4 +1,4 @@
-"""Quality metrics for evaluating stem separation."""
+]133;A\"""Quality metrics for evaluating stem separation."""
 
 from __future__ import annotations
 
@@ -81,7 +81,13 @@ def check_frequency_balance(stems: dict[str, np.ndarray]) -> dict[str, dict]:
 
 
 def calculate_quality_score(metrics: dict) -> float:
-    """Calculate an overall quality score from 0–100."""
+    """Calculate an overall quality score from 0–100.
+
+    This is a custom heuristic, not a standard metric. The formula weights
+    reconstruction error heavily (10×) and penalizes spectral artifacts
+    (5×). Treat the output as a relative comparison tool, not an absolute
+    quality measure.
+    """
     try:
         reconstruction = metrics.get("reconstruction_error", 100)
         artifact_levels = [

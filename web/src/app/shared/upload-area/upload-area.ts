@@ -1,3 +1,10 @@
+/**
+ * Upload area component — drag-and-drop zone for audio files.
+ *
+ * Accepts MP3, WAV, FLAC, OGG, M4A, AAC, and WMA files (validated by both
+ * MIME type and file extension).  Files larger than 500 MB trigger a warning
+ * but are still accepted — the backend may take a while to process them.
+ */
 import { Component, output, inject } from "@angular/core";
 import { NotificationService } from "../../core/services/notification.service";
 
@@ -18,6 +25,7 @@ export class UploadAreaComponent {
 	uploaded = output<UploadEvent>();
 	isDragging = false;
 
+	/** Prevent the browser from opening the dropped file in the tab. */
 	onDragOver(event: DragEvent): void {
 		event.preventDefault();
 		this.isDragging = true;
@@ -48,6 +56,7 @@ export class UploadAreaComponent {
 	}
 
 	private handleFile(file: File): void {
+		// MIME types that browsers may report for audio files
 		const accepted = [
 			"audio/mpeg",
 			"audio/wav",
@@ -59,6 +68,7 @@ export class UploadAreaComponent {
 			"audio/x-m4a",
 		];
 
+		// Fallback: check file extension if MIME type is empty
 		const ext = file.name.split(".").pop()?.toLowerCase();
 		const acceptedExts = ["mp3", "wav", "flac", "ogg", "m4a", "aac", "wma"];
 
@@ -73,6 +83,7 @@ export class UploadAreaComponent {
 			return;
 		}
 
+		// 500 MB limit — warn but don't block (large files just take longer)
 		const maxMB = 500;
 		if (file.size > maxMB * 1024 * 1024) {
 			this.notifications.warning(
@@ -83,6 +94,7 @@ export class UploadAreaComponent {
 		this.uploaded.emit({ file });
 	}
 
+	/** Format bytes as human-readable string (e.g. "12.3 MB"). */
 	formatSize(bytes: number): string {
 		const units = ["B", "KB", "MB", "GB"];
 		let i = 0;

@@ -1,4 +1,4 @@
-import { Component, type OnInit, type OnDestroy, inject } from "@angular/core";
+]133;A\]133;A\]133;A\import { Component, type OnInit, type OnDestroy, inject } from "@angular/core";
 import { lastValueFrom, Subject } from "rxjs";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
@@ -68,6 +68,8 @@ export class HomePage implements OnInit, OnDestroy {
 		this.apiUrlConfigured = !!this.settings.current().apiUrl;
 		this.checkApi();
 		this.loadQueueStatus();
+		// Poll queue status every 5 seconds; fast enough for responsive UI
+		// without hammering the backend.
 		this.queueInterval = setInterval(() => this.loadQueueStatus(), 5000);
 	}
 
@@ -167,17 +169,19 @@ export class HomePage implements OnInit, OnDestroy {
 							stage: "Splitting complete!",
 						});
 					} else if (job.status !== "completed" && job.status !== "failed") {
-						setTimeout(poll, 3_000);
-					} else {
-						if (job.status === "failed") {
-							this.activeJob!.error = job.error ?? "Unknown error";
-							this.notifications.error(job.error ?? "Processing failed");
+							// Normal polling: check every 3 seconds
+							setTimeout(poll, 3_000);
+						} else {
+							if (job.status === "failed") {
+								this.activeJob!.error = job.error ?? "Unknown error";
+								this.notifications.error(job.error ?? "Processing failed");
+							}
 						}
-					}
 				},
-				error: () => {
-					setTimeout(poll, 5_000);
-				},
+					error: () => {
+						// Back off to 5 seconds on error to avoid flooding the API
+						setTimeout(poll, 5_000);
+					},
 			});
 		};
 

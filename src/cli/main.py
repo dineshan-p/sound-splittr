@@ -1,4 +1,12 @@
-"""Command-line interface for Sound Splittr."""
+"""Command-line interface for Sound Splittr.
+
+Usage:
+    python src/cli/main.py -i song.mp3 -o output/
+
+The CLI provides a simple interface for stem separation without the
+web frontend. Use --verbose for GPU status and --dry-run to validate
+inputs before processing.
+"""
 
 from __future__ import annotations
 
@@ -14,7 +22,11 @@ import click
 
 
 def show_gpu_status() -> None:
-    """Display GPU availability and memory."""
+    """Display GPU availability and memory.
+
+    Queries PyTorch's CUDA backend to show GPU count, names, free/total
+    memory, and a recommendation for whether GPU or CPU mode is suitable.
+    """
     try:
         import torch  # noqa: F811
 
@@ -77,7 +89,24 @@ def main(
     no_gpu: bool,
     dry_run: bool,
 ) -> None:
-    """Separate an audio file into individual stems using Demucs AI."""
+    """Separate an audio file into individual stems using Demucs AI.
+
+    This is the entry point for the CLI tool. It validates inputs,
+    optionally shows GPU status, and delegates to the processing pipeline.
+
+    Examples:
+        # Basic usage with defaults
+        $ python src/cli/main.py -i song.mp3 -o output/
+
+        # 6-stem separation with FLAC output
+        $ python src/cli/main.py -i song.mp3 -o output/ -m htdemucs_6s -f flac
+
+        # Dry-run to validate before processing
+        $ python src/cli/main.py -i song.mp3 -o output/ --dry-run
+
+        # Force CPU mode
+        $ python src/cli/main.py -i song.mp3 -o output/ --no-gpu
+    """
     input_path = Path(input_file).resolve()
     if not input_path.is_file():
         click.echo(f"❌ Error: Input file not found: {input_file}", err=True)

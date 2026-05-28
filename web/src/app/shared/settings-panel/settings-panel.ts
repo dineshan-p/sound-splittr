@@ -1,3 +1,8 @@
+/**
+ * Settings panel — form for configuring backend URL, output model,
+ * format, and bitrate.  All values are two-way bound to the
+ * SettingsService and persisted to localStorage.
+ */
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { AVAILABLE_MODELS, type OutputFormat } from "../../core/models";
@@ -47,10 +52,12 @@ export class SettingsPanelComponent {
 		private notifications: NotificationService,
 	) {}
 
+	/** Convert a string input to an integer for Angular's ngModel binding. */
 	parseIntValue(val: string): number {
 		return Number.parseInt(val, 10);
 	}
 
+	/** Guard against invalid format strings from the input field. */
 	setFormatValue(val: string): void {
 		if (val === "mp3" || val === "wav" || val === "flac") {
 			this.format = val as OutputFormat;
