@@ -17,6 +17,9 @@ scipy>=1.11.0
 # MP3 export
 pydub>=0.25.1
 
+# Backport of removed pyaudioop (stdlib in <3.13, removed in 3.13+)
+pyaudioop-lts>=0.2.1; python_version >= "3.13"
+
 # ML / AI runtime
 torch>=2.5.1
 torchaudio>=2.5.1
