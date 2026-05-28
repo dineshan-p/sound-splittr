@@ -69,7 +69,7 @@ Output lands in `dist/sound-splittr-web/`. Serve these files with any static fil
 All TypeScript interfaces live in `core/models/index.ts`:
 
 - `Job` — Represents a split job (id, fileName, status, progress, stems, etc.)
-- `JobStatus` — Union type: `"queued" | "processing" | "completed" | "failed"`
+- `JobStatus` — Union type: `"queued" | "processing" | "completed" | "failed" | "unknown"`
 - `StemInfo` — Metadata for a single stem file
 - `SplitRequest` — Payload sent to the backend when uploading
 - `UploadResponse` — Response from the upload endpoint

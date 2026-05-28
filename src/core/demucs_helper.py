@@ -1,4 +1,4 @@
-]133;A\"""Demucs integration module — model metadata and loading."""
+"""Demucs integration module — model metadata and loading."""
 
 from __future__ import annotations
 

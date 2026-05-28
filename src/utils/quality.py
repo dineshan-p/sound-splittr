@@ -1,4 +1,4 @@
-]133;A\"""Quality metrics for evaluating stem separation."""
+"""Quality metrics for evaluating stem separation."""
 
 from __future__ import annotations
 

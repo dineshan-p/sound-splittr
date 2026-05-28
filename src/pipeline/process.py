@@ -1,4 +1,4 @@
-]133;A\]133;A\]133;A\"""Main audio processing pipeline for stem separation."""
+"""Main audio processing pipeline for stem separation."""
 
 import os
 import torch

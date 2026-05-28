@@ -1,4 +1,4 @@
-]133;A\# 🎚️ Sound Splittr — AI Audio Stem Separator
+# 🎚️ Sound Splittr — AI Audio Stem Separator
 
 Separate any song into vocals, drums, bass, and other stems using Demucs AI. Built for DJs who need fast, reliable stem separation for live remixing and mashups.
 
@@ -59,7 +59,7 @@ python src/cli/main.py \
 | `-d, --device` | `auto` \| `cuda` \| `cpu` | `auto` | Hardware device (`auto` picks GPU if available) |
 | `-f, --format` | `mp3` \| `wav` \| `flac` | `mp3` | Output audio format |
 | `-b, --bitrate` | integer | `320` | MP3 bitrate in kbps (only used with `--format mp3`) |
-| `-v, --verbose` | flag | off | Show detailed processing info |
+| `-v, --verbose` | flag | off | Show detailed processing info and GPU status |
 | `--no-gpu` | flag | off | Force CPU mode even if GPU is available |
 | `--dry-run` | flag | off | Validate inputs but don't actually process |
 
@@ -166,10 +166,10 @@ Open **`http://localhost:4200`** in your browser.
 ```bash
 cd web
 ng build --configuration production
-# Output goes to dist/sound-splittr/
+# Output goes to dist/sound-splittr-web/
 ```
 
-Serve the output with any static file server (nginx, Apache, `npx serve dist/sound-splittr`).
+Serve the output with any static file server (nginx, Apache, `npx serve dist/sound-splittr-web`).
 
 ---
 
@@ -211,15 +211,35 @@ pytest tests/ -v --tb=short
 ### Run Specific Test Areas
 
 ```bash
-# Unit tests only (fast)
+# All Python tests (unit + integration + edge cases)
+pytest tests/ -v
+
+# Unit tests only (fast, no I/O)
 pytest tests/unit/ -v
 
-# Integration tests (full pipeline)
+# Integration tests (full pipeline with real audio I/O)
 pytest tests/integration/test_integration.py -v --tb=short
+
+# Edge case tests
+pytest tests/test_edge_cases.py -v
 
 # Angular unit tests
 cd web && ng test
 ```
+
+### Test Coverage
+
+The test suite includes **115 Python tests** and **60+ Angular tests** covering:
+
+- **API endpoints** — upload, job management, validation, error handling
+- **Job queue** — serialization, GPU memory gating, concurrency limits, persistence
+- **Audio I/O** — loading, saving, normalization, clipping detection, metadata
+- **CLI** — input validation, dry-run mode, verbose GPU status, help text
+- **Edge cases** — empty responses, timeouts, invalid inputs, silent tracks, zero-length files
+- **Frontend services** — API client, settings persistence, notifications
+- **Frontend components** — upload area, stem player, processing status, job list
+
+See `TEST_SUMMARY.md` for the full breakdown.
 
 ---
 
@@ -230,6 +250,33 @@ cd web && ng test
 | `htdemucs` | 4 (vocals, drums, bass, other) | Balanced speed and quality | General purpose, live DJing |
 | `mdxdemucs` | 4 (vocals, drums, bass, other) | Higher quality, slower | Studio-grade separation |
 | `htdemucs_6s` | 6 (vocals, drums, bass, other, guitar, piano) | 6-way split | Detailed stem extraction |
+
+---
+
+## ⚙️ Configuration
+
+A `config/config.yaml` file provides default settings for the pipeline:
+
+```yaml
+model:
+  name: htdemucs
+  device: auto
+  gpu_mem_frac: 0.5
+  num_workers: 2
+
+output:
+  format: mp3
+  bitrate: 320
+  stems: [vocals, drums, bass, other]
+
+preprocessing:
+  normalize: true
+  min_amplitude: 0.001
+  denoise: false
+
+quality:
+  level: 1
+```
 
 ---
 
@@ -250,16 +297,29 @@ sound-splittr/
 │
 ├── web/                          # Angular 21 frontend
 │   ├── proxy.conf.json           # API proxy config (dev)
+│   ├── angular.json              # Angular build configuration
 │   └── src/app/
 │       ├── pages/                # Home, Jobs, Settings
 │       ├── shared/               # Upload, Player, Status components
 │       └── core/                 # Models, API service, Settings service
 │
-├── tests/                        # Test suite
+├── tests/                        # Test suite (115 Python + 60+ Angular tests)
 │   ├── unit/                     # Unit tests (pipeline, core, utils)
-│   └── integration/              # Integration tests
+│   ├── integration/              # Integration tests
+│   ├── fixtures/                 # Synthetic audio generators for tests
+│   ├── test_server.py            # API endpoint tests
+│   ├── test_queue.py             # Job queue tests
+│   ├── test_cli.py               # CLI tests
+│   ├── test_audio_io.py          # Audio I/O tests
+│   ├── test_demucs_helper.py     # Model helper tests
+│   └── test_edge_cases.py        # Edge case / error handling tests
+│
+├── config/                       # Pipeline configuration (YAML)
+├── docs/                         # Additional documentation
 ├── requirements.txt              # Python dependencies
-└── AGENTS.md                     # Project instructions
+├── pytest.ini                    # pytest configuration
+├── AGENTS.md                     # Project instructions
+└── README.md                     # This file
 ```
 
 ---
@@ -273,12 +333,12 @@ sound-splittr/
 → This was a bug in an older version. Make sure you're on the latest code.
 
 **"GPU out of memory"**
-→ Use `--no-gpu` or `-d cpu` to force CPU mode. The first model download will cache to `app/models/` for faster subsequent runs.
+→ Use `--no-gpu` or `-d cpu` to force CPU mode. The first model download will cache for faster subsequent runs.
 
-**Frontend shows "Backend not connected"**
+**"Frontend shows 'Backend not connected'"**
 → Make sure the backend is running: `curl http://localhost:8000/api/health` should return `{"status":"ok",...}`
 
-**Stems are all silence or empty**
+**"Stems are all silence or empty"**
 → Try a different model (`mdxdemucs` often works better for complex mixes). Some audio formats may need conversion first.
 
 ---
@@ -292,7 +352,7 @@ sound-splittr/
 | Backend REST API (`src/api/server.py`) | ✅ Working |
 | Angular 21 web frontend (`web/`) | ✅ Working |
 | End-to-end upload → process → download | ✅ Verified |
-| Unit + integration tests | ✅ Passing |
+| Unit + integration tests (115 Python + 60+ Angular) | ✅ Passing |
 
 ## 📋 What's Coming
 

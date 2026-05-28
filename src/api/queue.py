@@ -1,4 +1,4 @@
-]133;A\]133;A\]133;A\"""Job queue with GPU protection and JSON persistence."""
+"""Job queue with GPU protection and JSON persistence."""
 
 from __future__ import annotations
 
