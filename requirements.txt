@@ -15,10 +15,9 @@ soundfile>=0.13.1
 scipy>=1.11.0
 
 # MP3 export
-pydub>=0.25.1
-
-# Backport of removed pyaudioop (stdlib in <3.13, removed in 3.13+)
-pyaudioop-lts>=0.2.1; python_version >= "3.13"
+# 0.25.1 on PyPI lacks pyaudioop.py shim needed for Python 3.13+;
+# install from git master which includes the fix (PR #816).
+pydub @ git+https://github.com/jiaaro/pydub.git
 
 # ML / AI runtime
 torch>=2.5.1
