@@ -1,4 +1,4 @@
-# 🎚️ Sound Splittr — AI Audio Stem Separator
+]133;A\# 🎚️ Sound Splittr — AI Audio Stem Separator
 
 Separate any song into vocals, drums, bass, and other stems using Demucs AI. Built for DJs who need fast, reliable stem separation for live remixing and mashups.
 
@@ -236,22 +236,28 @@ cd web && ng test
 ## 📁 Project Structure
 
 ```
-sound_splittr/
+sound-splittr/
 ├── src/                          # Python code
 │   ├── cli/main.py               # CLI tool (Click framework)
 │   ├── api/server.py             # FastAPI REST API backend
 │   ├── api/queue.py              # Job queue and storage
+│   ├── core/                     # Audio processing helpers
+│   │   ├── demucs_helper.py      # Model discovery & metadata
+│   │   └── audio_io.py           # Load/save audio (soundfile/pydub)
 │   ├── pipeline/process.py       # Core splitting pipeline
 │   └── utils/                    # Shared helpers
+│       └── quality.py            # Separation quality metrics
 │
 ├── web/                          # Angular 21 frontend
 │   ├── proxy.conf.json           # API proxy config (dev)
 │   └── src/app/
 │       ├── pages/                # Home, Jobs, Settings
 │       ├── shared/               # Upload, Player, Status components
-│       └── core/                 # Models, API service
+│       └── core/                 # Models, API service, Settings service
 │
 ├── tests/                        # Test suite
+│   ├── unit/                     # Unit tests (pipeline, core, utils)
+│   └── integration/              # Integration tests
 ├── requirements.txt              # Python dependencies
 └── AGENTS.md                     # Project instructions
 ```

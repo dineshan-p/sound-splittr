@@ -1,4 +1,5 @@
-import { Component, type OnInit, inject } from "@angular/core";
+import { Component, type OnInit, inject, ChangeDetectorRef } from "@angular/core";
+import { DomSanitizer, type SafeHtml } from "@angular/platform-browser";
 import { RouterLink } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
 import { NotificationService } from "../../core/services/notification.service";
@@ -16,6 +17,8 @@ export type StatusFilter = "all" | Job["status"];
 export class JobsPage implements OnInit {
 	private api = inject(ApiService);
 	private notifications = inject(NotificationService);
+	private cdr = inject(ChangeDetectorRef);
+	private sanitizer = inject(DomSanitizer);
 
 	jobs: Job[] = [];
 	loading = true;
@@ -36,13 +39,15 @@ export class JobsPage implements OnInit {
 			next: (data) => {
 				this.jobs = data;
 				this.loading = false;
+				this.cdr.detectChanges();
 			},
-			error: () => {
+			error: (err) => {
 				this.error =
 					"Failed to load job history. The backend may not be running.";
 				this.jobs = [];
 				this.loading = false;
 				this.notifications.error(this.error);
+				this.cdr.detectChanges();
 			},
 		});
 	}
@@ -218,18 +223,13 @@ export class JobsPage implements OnInit {
 		return `${secs}s`;
 	}
 
-	getStatusIcon(status: string): string {
-		switch (status) {
-			case "queued":
-				return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-			case "processing":
-				return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
-			case "completed":
-				return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-			case "failed":
-				return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-			default:
-				return "";
-		}
+	getStatusIcon(status: string): SafeHtml {
+		const svgMap: Record<string, string> = {
+			queued: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+			processing: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`,
+			completed: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+			failed: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+		};
+		return this.sanitizer.bypassSecurityTrustHtml(svgMap[status] ?? "");
 	}
 }

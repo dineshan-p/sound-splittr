@@ -47,7 +47,7 @@ export class ApiService {
 	listJobs(): Observable<Job[]> {
 		return this.http
 			.get<Job[]>(`${this.baseUrl}/api/jobs`)
-			.pipe(timeout(10_000));
+			
 	}
 
 	deleteJob(jobId: string): Observable<void> {
