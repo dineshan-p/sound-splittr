@@ -60,15 +60,13 @@
     <label for="bitrate-select" class="form-label">MP3 Bitrate</label>
     <select
       id="bitrate-select"
-      #bitrateSelect
-      [value]="bitrate"
-      (change)="bitrate = parseIntValue(bitrateSelect.value)"
+      [(ngModel)]="bitrate"
       class="form-input form-select"
     >
-      <option [value]="128">128 kbps (standard)</option>
-      <option [value]="192">192 kbps (good)</option>
-      <option [value]="256">256 kbps (high)</option>
-      <option [value]="320">320 kbps (maximum)</option>
+      <option [ngValue]="128">128 kbps (standard)</option>
+      <option [ngValue]="192">192 kbps (good)</option>
+      <option [ngValue]="256">256 kbps (high)</option>
+      <option [ngValue]="320">320 kbps (maximum)</option>
     </select>
   </div>
   }
