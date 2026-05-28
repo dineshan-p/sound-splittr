@@ -1,4 +1,4 @@
-]133;A\]133;A\import {
+import {
 	Component,
 	input,
 	output,
