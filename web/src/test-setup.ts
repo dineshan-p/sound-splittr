@@ -4,18 +4,13 @@
  * Provides a clean environment for Angular component/service testing
  * by mocking browser APIs and setting up Angular testing utilities.
  */
+import 'zone.js';
 import 'zone.js/testing';
 import { getTestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
-
-// Initialize the Angular testing environment.
-getTestBed().initTestEnvironment(
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting(),
-);
 
 // Mock localStorage for tests (Angular's services use it heavily).
 const localStorageMock = (() => {
@@ -62,4 +57,31 @@ class ResizeObserverMock {
   observe() {}
   disconnect() {}
   unobserve() {}
+};
+
+// Mock DragEvent (jsdom does not have native DragEvent).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).DragEvent = class DragEventMock extends Event {
+  dataTransfer: any = { items: [], types: [], files: [] };
+  constructor(type: string, init?: EventInit) {
+    super(type, init);
+  }
+};
+
+// Mock DataTransfer (jsdom does not have native DataTransfer).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).DataTransfer = class DataTransferMock {
+  items: any[] = [];
+  types: string[] = [];
+  files: FileList = new Map() as unknown as FileList;
+
+  add(file: File): void {
+    this.items.push(file);
+    this.types.push(file.type);
+    (this.files as unknown as Map<number, File>).set(this.items.length - 1, file);
+    Object.defineProperty(this.files, 'length', { value: this.items.length });
+    Object.defineProperty(this.files, 'item', {
+      value: (index: number) => this.items[index] ?? null,
+    });
+  }
 };

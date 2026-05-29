@@ -1,213 +1,184 @@
 /**
  * Tests for JobsPage component.
  *
- * Verifies job list rendering, state badges,
- * stem download, and job selection.
+ * Verifies job loading, filtering, selection, deletion, and utility methods.
  */
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
+
 import { JobsPage } from './jobs-page';
-import { JobStatus, Job, Stem } from '../../models';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { of, throwError } from 'rxjs';
+import type { Job } from '../../core/models';
 
 describe('JobsPage', () => {
-  let fixture: ComponentFixture<JobsPage>;
   let component: JobsPage;
+  let mockApi: ApiService;
+  let mockNotifications: NotificationService;
 
-  let mockApiService: jasmine.SpyObj<ApiService>;
-  let mockNotificationService: jasmine.SpyObj<NotificationService>;
-
-  beforeEach(async () => {
-    mockApiService = jasmine.createSpyObj('ApiService', [
-      'listJobs', 'getJob', 'getStems', 'getStemUrl',
-      'downloadStem', 'getHealth', 'upload',
-    ]);
-    mockApiService.listJobs.and.returnValue(of([]));
-    mockApiService.getHealth.and.returnValue(of({
-      status: 'ok', gpu_available: true, models_loaded: 2,
-    }));
-
-    mockNotificationService = jasmine.createSpyObj('NotificationService', [
-      'show', 'success', 'error', 'info', 'warning', 'clear',
-    ]);
-    mockNotificationService.current.and.returnValue(null);
-
-    await TestBed.configureTestingModule({
+  beforeEach(() => {
+    TestBed.configureTestingModule({
       imports: [JobsPage],
       providers: [
-        { useValue: mockApiService },
-        { useValue: mockNotificationService },
+        provideRouter([]),
+        { provide: ApiService, useValue: {
+          listJobs: vi.fn(),
+          deleteJob: vi.fn(),
+          getStemUrl: vi.fn(),
+        }},
+        { provide: NotificationService, useValue: {
+          current: vi.fn(() => null),
+          success: vi.fn(),
+          error: vi.fn(),
+          confirm: vi.fn(),
+          clear: vi.fn(),
+        }},
       ],
-    }).compileComponents();
+    });
 
-    fixture = TestBed.createComponent(JobsPage);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    component = TestBed.createComponent(JobsPage).componentInstance;
+    mockApi = TestBed.inject(ApiService) as ApiService;
+    mockNotifications = TestBed.inject(NotificationService) as NotificationService;
   });
 
-  describe('initial state', () => {
+  describe('initialization', () => {
     it('should create', () => {
       expect(component).toBeTruthy();
     });
 
-    it('should have a page-title element', () => {
-      const title = fixture.debugElement.query(By.css('.page-title'));
-      expect(title).toBeTruthy();
+    it('should load jobs on init', async () => {
+      const mockJobs: Job[] = [
+        { id: '1', fileName: 'test.mp3', fileSize: 1000, durationSeconds: null, status: 'completed', progress: 100, modelUsed: 'htdemucs', stems: [], createdAt: new Date().toISOString() },
+      ];
+      vi.spyOn(mockApi, 'listJobs').mockReturnValue(of(mockJobs));
+      component.ngOnInit();
+      await mockApi.listJobs().toPromise();
+      expect(mockApi.listJobs).toHaveBeenCalled();
+      expect(component.jobs.length).toBe(1);
     });
 
-    it('should render a job list', () => {
-      const list = fixture.debugElement.query(By.css('.job-list'));
-      expect(list).toBeTruthy();
+    it('should handle load error', async () => {
+      vi.spyOn(mockApi, 'listJobs').mockReturnValue(throwError(() => new Error('Not found')));
+      component.ngOnInit();
+      try {
+        await mockApi.listJobs().toPromise();
+      } catch {
+        // Expected
+      }
+      expect(component.error).toContain('Failed to load job history');
+      expect(component.jobs).toEqual([]);
     });
   });
 
-  describe('job list rendering', () => {
-    it('should show no jobs message when list is empty', () => {
-      mockApiService.listJobs.and.returnValue(of([]));
-      component.ngOnInit();
-      fixture.detectChanges();
-      const msg = fixture.debugElement.query(By.css('.no-jobs'));
-      expect(msg).toBeTruthy();
+  describe('filtering', () => {
+    beforeEach(() => {
+      component.jobs = [
+        { id: '1', fileName: 'rock.mp3', fileSize: 1000, durationSeconds: null, status: 'completed', progress: 100, modelUsed: 'htdemucs', stems: [], createdAt: new Date().toISOString() },
+        { id: '2', fileName: 'jazz.mp3', fileSize: 1000, durationSeconds: null, status: 'failed', progress: 0, modelUsed: 'htdemucs', stems: [], createdAt: new Date().toISOString() },
+        { id: '3', fileName: 'pop.mp3', fileSize: 1000, durationSeconds: null, status: 'processing', progress: 50, modelUsed: 'htdemucs', stems: [], createdAt: new Date().toISOString() },
+      ];
     });
 
-    it('should render a job item for each job', () => {
-      const mockJobs: Job[] = [
-        { id: 'job-1', state: JobStatus.COMPLETED, progress: 100, stems: [] },
-        { id: 'job-2', state: JobStatus.PROCESSING, progress: 50, stems: [] },
-      ];
-      mockApiService.listJobs.and.returnValue(of(mockJobs));
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const items = fixture.debugElement.queryAll(By.css('.job-item'));
-      expect(items.length).toBe(2);
+    it('should filter by search query', () => {
+      component.searchQuery = 'rock';
+      const filtered = component.filteredJobs;
+      expect(filtered.length).toBe(1);
+      expect(filtered[0].fileName).toBe('rock.mp3');
     });
 
-    it('should display the job ID', () => {
-      const mockJobs: Job[] = [
-        { id: 'abc-123', state: JobStatus.IDLE, progress: 0, stems: [] },
-      ];
-      mockApiService.listJobs.and.returnValue(of(mockJobs));
-      component.ngOnInit();
-      fixture.detectChanges();
+    it('should filter by status', () => {
+      component.statusFilter = 'failed';
+      const filtered = component.filteredJobs;
+      expect(filtered.length).toBe(1);
+      expect(filtered[0].status).toBe('failed');
+    });
 
-      const items = fixture.debugElement.queryAll(By.css('.job-item'));
-      expect(items[0].nativeElement.textContent).toContain('abc-123');
+    it('should combine search and status filters', () => {
+      component.searchQuery = 'rock';
+      component.statusFilter = 'completed';
+      const filtered = component.filteredJobs;
+      expect(filtered.length).toBe(1);
+    });
+
+    it('should return all jobs when no filters', () => {
+      component.searchQuery = '';
+      component.statusFilter = 'all';
+      expect(component.filteredJobs.length).toBe(3);
     });
   });
 
-  describe('state badges', () => {
-    it('should show completed badge', () => {
-      const mockJobs: Job[] = [
-        { id: 'job-1', state: JobStatus.COMPLETED, progress: 100, stems: [] },
+  describe('selection', () => {
+    beforeEach(() => {
+      component.jobs = [
+        { id: '1', fileName: 'test1.mp3', fileSize: 1000, durationSeconds: null, status: 'completed', progress: 100, modelUsed: 'htdemucs', stems: [], createdAt: new Date().toISOString() },
+        { id: '2', fileName: 'test2.mp3', fileSize: 1000, durationSeconds: null, status: 'completed', progress: 100, modelUsed: 'htdemucs', stems: [], createdAt: new Date().toISOString() },
       ];
-      mockApiService.listJobs.and.returnValue(of(mockJobs));
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const badges = fixture.debugElement.queryAll(By.css('.status-badge'));
-      expect(badges[0].nativeElement.textContent.trim()).toContain('Completed');
     });
 
-    it('should show processing badge', () => {
-      const mockJobs: Job[] = [
-        { id: 'job-1', state: JobStatus.PROCESSING, progress: 50, stems: [] },
-      ];
-      mockApiService.listJobs.and.returnValue(of(mockJobs));
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const badges = fixture.debugElement.queryAll(By.css('.status-badge'));
-      expect(badges[0].nativeElement.textContent.trim()).toContain('Processing');
+    it('should toggle select individual job', () => {
+      component.toggleSelect('1');
+      expect(component.selectedIds.has('1')).toBe(true);
+      component.toggleSelect('1');
+      expect(component.selectedIds.has('1')).toBe(false);
     });
 
-    it('should show failed badge', () => {
-      const mockJobs: Job[] = [
-        { id: 'job-1', state: JobStatus.FAILED, progress: 30, stems: [] },
-      ];
-      mockApiService.listJobs.and.returnValue(of(mockJobs));
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const badges = fixture.debugElement.queryAll(By.css('.status-badge'));
-      expect(badges[0].nativeElement.textContent.trim()).toContain('Failed');
+    it('should toggle select all', () => {
+      component.toggleSelectAll();
+      expect(component.selectedIds.size).toBe(2);
+      expect(component.isAllSelected).toBe(true);
+      component.toggleSelectAll();
+      expect(component.selectedIds.size).toBe(0);
     });
 
-    it('should show queued badge', () => {
-      const mockJobs: Job[] = [
-        { id: 'job-1', state: JobStatus.QUEUED, progress: 0, stems: [] },
-      ];
-      mockApiService.listJobs.and.returnValue(of(mockJobs));
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const badges = fixture.debugElement.queryAll(By.css('.status-badge'));
-      expect(badges[0].nativeElement.textContent.trim()).toContain('Queued');
+    it('should clear selection', () => {
+      component.selectedIds.add('1');
+      component.selectedIds.add('2');
+      component.clearSelection();
+      expect(component.selectedIds.size).toBe(0);
     });
 
-    it('should show idle badge', () => {
-      const mockJobs: Job[] = [
-        { id: 'job-1', state: JobStatus.IDLE, progress: 0, stems: [] },
-      ];
-      mockApiService.listJobs.and.returnValue(of(mockJobs));
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const badges = fixture.debugElement.queryAll(By.css('.status-badge'));
-      expect(badges[0].nativeElement.textContent.trim()).toContain('Idle');
+    it('should report selected count', () => {
+      component.selectedIds.add('1');
+      expect(component.selectedCount).toBe(1);
     });
   });
 
-  describe('job selection', () => {
-    it('should set selectedJob when selectJob is called', () => {
-      const mockJob: Job = {
-        id: 'job-1',
-        state: JobStatus.COMPLETED,
-        progress: 100,
-        stems: [{ name: 'vocals', url: '/stems/job-1/vocals.wav' }],
+  describe('utility methods', () => {
+    it('should get status class', () => {
+      expect(component.getStatusClass('completed')).toBe('status-badge badge-completed');
+      expect(component.getStatusClass('failed')).toBe('status-badge badge-failed');
+      expect(component.getStatusClass('unknown')).toBe('status-badge ');
+    });
+
+    it('should format relative time', () => {
+      const now = new Date();
+      const recent = new Date(now.getTime() - 30000).toISOString(); // 30s ago
+      expect(component.formatRelative(recent)).toBe('just now');
+
+      const oneMinAgo = new Date(now.getTime() - 60000).toISOString();
+      expect(component.formatRelative(oneMinAgo)).toBe('1m ago');
+    });
+
+    it('should get stem count', () => {
+      const job: Job = {
+        id: '1', fileName: 'test.mp3', fileSize: 1000, durationSeconds: null,
+        status: 'completed', progress: 100, modelUsed: 'htdemucs',
+        stems: [{ name: 'vocals', displayName: 'Vocals', path: '/v.mp3', sizeBytes: 100 }],
+        createdAt: new Date().toISOString(),
       };
-      component.selectJob(mockJob);
-      expect(component.selectedJob).toBe(mockJob);
+      expect(component.getStemCount(job)).toBe(1);
     });
-  });
 
-  describe('refresh', () => {
-    it('should refresh the job list', () => {
-      const mockJobs: Job[] = [
-        { id: 'job-1', state: JobStatus.COMPLETED, progress: 100, stems: [] },
-      ];
-      mockApiService.listJobs.and.returnValue(of(mockJobs));
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      mockApiService.listJobs.calls.reset();
-      mockApiService.listJobs.and.returnValue(of([
-        { id: 'job-2', state: JobStatus.IDLE, progress: 0, stems: [] },
-      ]));
-
-      component.refreshJobs();
-      expect(mockApiService.listJobs).toHaveBeenCalled();
+    it('should capitalize strings', () => {
+      expect(component.capitalize('failed')).toBe('Failed');
     });
-  });
 
-  describe('error handling', () => {
-    it('should handle listJobs failure', () => {
-      mockApiService.listJobs.and.returnValue(throwError(() => new Error('API error')));
-      component.ngOnInit();
-      expect(mockNotificationService.error).toHaveBeenCalled();
-    });
-  });
-
-  describe('stem download', () => {
-    it('should download a stem when downloadStem is called', () => {
-      const mockStem: Stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      const mockBlob = new Blob(['stem data'], { type: 'audio/wav' });
-      mockApiService.downloadStem.and.returnValue(of({ blob: mockBlob, filename: 'vocals.wav' }));
-
-      component.downloadStem(mockStem);
-      expect(mockApiService.downloadStem).toHaveBeenCalledWith('job-1', 'vocals');
+    it('should format duration', () => {
+      expect(component.formatDuration(90)).toBe('1m 30s');
+      expect(component.formatDuration(60)).toBe('1m');
+      expect(component.formatDuration(30)).toBe('30s');
     });
   });
 });

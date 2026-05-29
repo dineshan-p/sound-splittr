@@ -1,235 +1,113 @@
 /**
- * Tests for StemPlayer component.
+ * Tests for StemPlayerComponent.
  *
- * Verifies play/pause, volume, solo/mute toggles,
- * audio element state, and error handling.
+ * Verifies play/pause, mute/solo, volume, seek, and download.
+ * Uses TestBed with input signals set via componentRef.setInput.
  */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { StemPlayer } from './stem-player';
-import { Stem } from '../../models';
+import { FormsModule } from '@angular/forms';
 
-describe('StemPlayer', () => {
-  let fixture: ComponentFixture<StemPlayer>;
-  let component: StemPlayer;
+import { vi } from 'vitest';
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [StemPlayer],
-    }).compileComponents();
+import { StemPlayerComponent, StemPlayerProps } from './stem-player';
+import { NotificationService } from '../../core/services/notification.service';
 
-    fixture = TestBed.createComponent(StemPlayer);
+describe('StemPlayerComponent', () => {
+  let component: StemPlayerComponent;
+  let fixture: ComponentFixture<StemPlayerComponent>;
+  let mockNotifications: any;
+
+  const defaultStem: StemPlayerProps = {
+    name: 'vocals',
+    displayName: 'Vocals',
+    src: 'http://localhost:8000/api/stems/job1/vocals',
+  };
+
+  beforeEach(() => {
+    const notifSpy: any = {
+      info: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+      warning: vi.fn(),
+      confirm: vi.fn(),
+      clear: vi.fn(),
+      current: () => null,
+    };
+
+    TestBed.configureTestingModule({
+      imports: [StemPlayerComponent, FormsModule],
+      providers: [{ provide: NotificationService, useValue: notifSpy }],
+    });
+
+    fixture = TestBed.createComponent(StemPlayerComponent);
     component = fixture.componentInstance;
+    mockNotifications = TestBed.inject(NotificationService) as any;
+
+    // Set the required input signal
+    fixture.componentRef.setInput('stem', defaultStem);
     fixture.detectChanges();
   });
 
-  describe('initial state', () => {
-    it('should create', () => {
-      expect(component).toBeTruthy();
-    });
-
-    it('should start with muted=false', () => {
-      expect(component.muted).toBe(false);
-    });
-
-    it('should start with solo=false', () => {
-      expect(component.solo).toBe(false);
-    });
-
-    it('should start with volume=1', () => {
-      expect(component.volume).toBe(1);
-    });
-
-    it('should not be playing initially', () => {
-      expect(component.playing).toBe(false);
-    });
+  it('should create', () => {
+    expect(component).toBeTruthy();
   });
 
-  describe('stem input', () => {
-    it('should display the stem name', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-      const nameEl = fixture.debugElement.query(By.css('.stem-name'));
-      expect(nameEl.nativeElement.textContent).toContain('vocals');
-    });
-
-    it('should display the stem URL as a data attribute', () => {
-      component.stem = { name: 'drums', url: '/stems/job-1/drums.wav' };
-      fixture.detectChanges();
-      // Check that the component has the stem set.
-      expect(component.stem.name).toBe('drums');
-    });
+  it('should initialize with expected signal values', () => {
+    expect(component.isPlaying()).toBe(false);
+    expect(component.isMuted()).toBe(false);
+    expect(component.volume()).toBe(100);
+    expect(component.duration()).toBe(0);
+    expect(component.currentTime()).toBe(0);
+    expect(component.isSoloed()).toBe(false);
   });
 
-  describe('play/pause', () => {
-    it('should emit playing when play is called', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-
-      let playing = false;
-      component.playingChange.subscribe((v) => { playing = v; });
-
-      component.play();
-      expect(playing).toBe(true);
-    });
-
-    it('should emit playing=false when pause is called', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      component.playing = true;
-      fixture.detectChanges();
-
-      let playing = false;
-      component.playingChange.subscribe((v) => { playing = v; });
-
-      component.pause();
-      expect(playing).toBe(false);
-    });
-
-    it('should toggle play/pause when playPause is called', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-
-      let playing = false;
-      component.playingChange.subscribe((v) => { playing = v; });
-
-      // Initially not playing.
-      component.playPause();
-      expect(playing).toBe(true);
-
-      // Now pause.
-      component.playing = true;
-      component.playPause();
-      expect(playing).toBe(false);
-    });
+  it('should toggle mute', () => {
+    component.toggleMute();
+    expect(component.isMuted()).toBe(true);
+    component.toggleMute();
+    expect(component.isMuted()).toBe(false);
   });
 
-  describe('volume control', () => {
-    it('should emit volume change when setVolume is called', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-
-      let volume = 0;
-      component.volumeChange.subscribe((v) => { volume = v; });
-
-      component.setVolume(0.5);
-      expect(volume).toBe(0.5);
-      expect(component.volume).toBe(0.5);
-    });
-
-    it('should clamp volume to valid range [0, 1]', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-
-      component.setVolume(1.5);
-      expect(component.volume).toBe(1);
-
-      component.setVolume(-0.5);
-      expect(component.volume).toBe(0);
-    });
-
-    it('should emit volume=0 when mute is toggled', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      component.volume = 0.8;
-      fixture.detectChanges();
-
-      let volume = 0;
-      component.volumeChange.subscribe((v) => { volume = v; });
-
-      component.toggleMute();
-      expect(volume).toBe(0);
-    });
-
-    it('should restore volume when unmute is toggled', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      component.volume = 0.8;
-      component.muted = true;
-      fixture.detectChanges();
-
-      let volume = 0;
-      component.volumeChange.subscribe((v) => { volume = v; });
-
-      component.toggleMute();
-      expect(volume).toBe(0.8);
-    });
+  it('should toggle solo', () => {
+    component.toggleSolo();
+    expect(component.isSoloed()).toBe(true);
+    component.toggleSolo();
+    expect(component.isSoloed()).toBe(false);
   });
 
-  describe('solo/mute', () => {
-    it('should toggle solo state', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-
-      expect(component.solo).toBe(false);
-      component.toggleSolo();
-      expect(component.solo).toBe(true);
-      component.toggleSolo();
-      expect(component.solo).toBe(false);
-    });
-
-    it('should toggle mute state', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-
-      expect(component.muted).toBe(false);
-      component.toggleMute();
-      expect(component.muted).toBe(true);
-      component.toggleMute();
-      expect(component.muted).toBe(false);
-    });
-
-    it('should emit solo change', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-
-      let solo = false;
-      component.soloChange.subscribe((v) => { solo = v; });
-
-      component.toggleSolo();
-      expect(solo).toBe(true);
-    });
-
-    it('should emit mute change', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-
-      let muted = false;
-      component.mutedChange.subscribe((v) => { muted = v; });
-
-      component.toggleMute();
-      expect(muted).toBe(true);
-    });
+  it('should set volume', () => {
+    const event = { target: { value: '50' } } as unknown as Event;
+    component.setVolume(event);
+    expect(component.volume()).toBe(50);
   });
 
-  describe('error handling', () => {
-    it('should emit error on audio error event', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-
-      let error: string | null = null;
-      component.error.subscribe((e) => { error = e; });
-
-      component.onError(new Event('error'));
-      expect(error).toContain('audio error');
-    });
-
-    it('should emit error with custom message', () => {
-      component.onError(new Event('error'), 'Custom error');
-      // The error event should have been handled.
-    });
+  it('should seek', () => {
+    const event = { target: { value: '30' } } as unknown as Event;
+    component.seek(event);
+    expect(component.currentTime()).toBe(30);
   });
 
-  describe('audio element interaction', () => {
-    it('should have an audio element in the template', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-      const audioEl = fixture.debugElement.query(By.css('audio'));
-      expect(audioEl).toBeTruthy();
-    });
+  it('should format time correctly for minutes', () => {
+    expect(component.formatTime(60)).toBe('1:00');
+    expect(component.formatTime(120)).toBe('2:00');
+    expect(component.formatTime(90)).toBe('1:30');
+  });
 
-    it('should set audio src when stem changes', () => {
-      component.stem = { name: 'vocals', url: '/stems/job-1/vocals.wav' };
-      fixture.detectChanges();
-      const audioEl = fixture.debugElement.query(By.css('audio'));
-      expect(audioEl.nativeElement.src).toContain('/stems/job-1/vocals.wav');
-    });
+  it('should format time with hours', () => {
+    expect(component.formatTime(3661)).toBe('1:01:01');
+    expect(component.formatTime(7200)).toBe('2:00:00');
+  });
+
+  it('should emit downloaded on download', () => {
+    let emittedName: string | null = null;
+    component.downloaded.subscribe((name) => { emittedName = name; });
+    component.onDownload();
+    expect(emittedName).toBe('vocals');
+    expect(mockNotifications.info).toHaveBeenCalledWith('Downloading Vocals');
+  });
+
+  it('should handle mute all when not soloed', () => {
+    component.handleMuteAll();
+    expect(component.isMuted()).toBe(true);
   });
 });

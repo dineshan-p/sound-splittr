@@ -1,215 +1,208 @@
 /**
  * Tests for HomePage component.
  *
- * Verifies the page layout, upload area integration,
- * processing status display, and stem list display.
+ * Verifies API health check, upload flow, job polling, stem display,
+ * and utility methods.
  */
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { HomePage } from './home-page';
-import { JobStatus, Job } from '../../models';
-import { ApiService } from '../../core/services/api.service';
-import { NotificationService } from '../../core/services/notification.service';
-import { SettingsService } from '../../core/services/settings.service';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
+
+import { HomePage } from './home-page';
+import { ApiService } from '../../core/services/api.service';
+import { SettingsService } from '../../core/services/settings.service';
+import { NotificationService } from '../../core/services/notification.service';
+import type { Job, UploadResponse } from '../../core/models';
 
 describe('HomePage', () => {
-  let fixture: ComponentFixture<HomePage>;
   let component: HomePage;
+  let mockApi: ApiService;
+  let mockSettings: SettingsService;
+  let mockNotifications: NotificationService;
 
-  const mockApiService = {
-    upload: jasmine.createSpy('upload').and.returnValue(of('job-123')),
-    listJobs: jasmine.createSpy('listJobs').and.returnValue(of([])),
-    getJob: jasmine.createSpy('getJob').and.returnValue(of({
-      id: 'job-123',
-      state: JobStatus.IDLE,
-      progress: 0,
-      stems: [],
-    })),
-    getStems: jasmine.createSpy('getStems').and.returnValue(of([])),
-    getHealth: jasmine.createSpy('getHealth').and.returnValue(of({
-      status: 'ok',
-      gpu_available: true,
-      models_loaded: 2,
-    })),
-  };
-
-  const mockNotificationService = {
-    show: jasmine.createSpy('show'),
-    success: jasmine.createSpy('success'),
-    error: jasmine.createSpy('error'),
-    info: jasmine.createSpy('info'),
-    warning: jasmine.createSpy('warning'),
-    clear: jasmine.createSpy('clear'),
-    current: jasmine.createSpy('current').and.returnValue(null),
-    confirm: jasmine.createSpy('confirm').and.returnValue(Promise.resolve(true)),
-  };
-
-  const mockSettingsService = {
-    patch: jasmine.createSpy('patch'),
-    reset: jasmine.createSpy('reset'),
-    current: jasmine.createSpy('current').and.returnValue({
-      apiUrl: 'http://localhost:8000',
-      defaultModel: 'htdemucs',
-      defaultFormat: 'wav',
-      defaultBitrate: 192,
-    }),
-    apiUrl: 'http://localhost:8000',
-    model: 'htdemucs',
-    format: 'wav',
-    bitrate: 192,
-  };
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
+  beforeEach(() => {
+    TestBed.configureTestingModule({
       imports: [HomePage],
       providers: [
-        { useValue: mockApiService },
-        { useValue: mockNotificationService },
-        { useValue: mockSettingsService },
+        provideRouter([]),
+        { provide: ApiService, useValue: {
+          uploadAudio: vi.fn(),
+          getJob: vi.fn(),
+          listJobs: vi.fn(),
+          deleteJob: vi.fn(),
+          getStemUrl: vi.fn(),
+          fetchModels: vi.fn(),
+          ping: vi.fn(),
+        }},
+        { provide: SettingsService, useValue: {
+          current: vi.fn(() => ({ apiUrl: 'http://localhost:8000', defaultModel: 'htdemucs', defaultFormat: 'mp3', defaultBitrate: 320 })),
+          model: 'htdemucs',
+          format: 'mp3',
+          bitrate: 320,
+          patch: vi.fn(),
+          reset: vi.fn(),
+        }},
+        { provide: NotificationService, useValue: {
+          current: vi.fn(() => null),
+          show: vi.fn(),
+          success: vi.fn(),
+          error: vi.fn(),
+          warning: vi.fn(),
+          info: vi.fn(),
+          confirm: vi.fn(),
+          clear: vi.fn(),
+        }},
       ],
-    }).compileComponents();
+    });
 
-    fixture = TestBed.createComponent(HomePage);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    component = TestBed.createComponent(HomePage).componentInstance;
+    mockApi = TestBed.inject(ApiService) as ApiService;
+    mockSettings = TestBed.inject(SettingsService) as SettingsService;
+    mockNotifications = TestBed.inject(NotificationService) as NotificationService;
   });
 
-  describe('initial state', () => {
+  describe('initialization', () => {
     it('should create', () => {
       expect(component).toBeTruthy();
     });
 
-    it('should have a page-title element', () => {
-      const title = fixture.debugElement.query(By.css('.page-title'));
-      expect(title).toBeTruthy();
-    });
-
-    it('should render an upload area', () => {
-      const uploadArea = fixture.debugElement.query(By.css('app-upload-area'));
-      expect(uploadArea).toBeTruthy();
-    });
-
-    it('should render a processing status component', () => {
-      const status = fixture.debugElement.query(By.css('app-processing-status'));
-      expect(status).toBeTruthy();
-    });
-
-    it('should render a stem list component', () => {
-      const list = fixture.debugElement.query(By.css('app-stem-list'));
-      expect(list).toBeTruthy();
-    });
-  });
-
-  describe('health check', () => {
-    it('should call getHealth on init', () => {
-      expect(mockApiService.getHealth).toHaveBeenCalled();
-    });
-
-    it('should set health status when health check succeeds', () => {
-      expect(component.healthStatus).toBe('ok');
-      expect(component.gpuAvailable).toBe(true);
-    });
-
-    it('should handle health check failure gracefully', () => {
-      mockApiService.getHealth.and.returnValue(throwError(() => new Error('Server down')));
+    it('should set apiAvailable based on ping result', async () => {
+      vi.spyOn(mockApi, 'ping').mockReturnValue(of({ status: 'ok', queue_size: 0, active_count: 0, total_jobs: 0, gpu: null }));
       component.ngOnInit();
-      expect(component.healthStatus).toBe('error');
+      await mockApi.ping().toPromise();
+      expect(component.apiAvailable).toBe(true);
+      expect(component.apiChecked).toBe(true);
+    });
+
+    it('should set apiAvailable to false when ping fails', async () => {
+      vi.spyOn(mockApi, 'ping').mockReturnValue(throwError(() => new Error('Not found')));
+      component.ngOnInit();
+      try {
+        await mockApi.ping().toPromise();
+      } catch {
+        // Expected
+      }
+      expect(component.apiAvailable).toBe(false);
     });
   });
 
-  describe('file upload', () => {
-    it('should call api.upload when files are selected', () => {
-      const files = [new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' })];
-      component.onFilesSelected(files);
-      expect(mockApiService.upload).toHaveBeenCalled();
+  describe('upload flow', () => {
+    it('should emit upload event with correct request', () => {
+      const testFile = new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' });
+      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+
+      component.onUpload({ file: testFile });
+      expect(mockApi.uploadAudio).toHaveBeenCalledWith(testFile, expect.objectContaining({
+        model: 'htdemucs',
+        format: 'mp3',
+        bitrate: 320,
+      }));
     });
 
-    it('should show success notification on upload', () => {
-      const files = [new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' })];
-      component.onFilesSelected(files);
-      expect(mockNotificationService.success).toHaveBeenCalled();
+    it('should set activeJob when upload starts', () => {
+      const testFile = new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' });
+      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+
+      component.onUpload({ file: testFile });
+      expect(component.activeJob).not.toBeNull();
+      expect(component.activeJob!.fileName).toBe('test.mp3');
+      expect(component.activeJob!.status).toBe('queued');
     });
 
-    it('should show error notification on upload failure', () => {
-      mockApiService.upload.and.returnValue(throwError(() => new Error('Upload failed')));
-      const files = [new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' })];
-      component.onFilesSelected(files);
-      expect(mockNotificationService.error).toHaveBeenCalled();
+    it('should clear completedStems on new upload', () => {
+      component.completedStems = [{ name: 'vocals', displayName: 'Vocals', path: '/vocals.mp3', sizeBytes: 1000 }];
+      const testFile = new File(['dummy'], 'test2.mp3', { type: 'audio/mpeg' });
+      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-456', message: 'Queued' } as UploadResponse));
+
+      component.onUpload({ file: testFile });
+      expect(component.completedStems).toEqual([]);
     });
   });
 
   describe('job polling', () => {
-    it('should poll job status when job is assigned', () => {
-      component.job = {
-        id: 'job-1',
-        state: JobStatus.PROCESSING,
-        progress: 50,
-        stems: [],
-      };
-      fixture.detectChanges();
-      // The polling should have started.
-      expect(mockApiService.getJob).toHaveBeenCalled();
+    it('should poll job status after upload', async () => {
+      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+      vi.spyOn(mockApi, 'getJob').mockReturnValue(of({
+        id: 'job-123', fileName: 'test.mp3', fileSize: 1000, durationSeconds: null,
+        status: 'processing', progress: 50, modelUsed: 'htdemucs', stems: [],
+        createdAt: new Date().toISOString(),
+      } as Job));
+
+      component.onUpload({ file: new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' }) });
+      await mockApi.getJob('job-123').toPromise();
+      expect(mockApi.getJob).toHaveBeenCalledWith('job-123');
     });
 
-    it('should stop polling when job completes', () => {
-      component.job = {
-        id: 'job-1',
-        state: JobStatus.COMPLETED,
-        progress: 100,
-        stems: [{ name: 'vocals', url: '/stems/job-1/vocals.wav' }],
-      };
-      fixture.detectChanges();
-      // Polling should have stopped.
-    });
+    it('should handle failed job', async () => {
+      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+      vi.spyOn(mockApi, 'getJob').mockReturnValue(of({
+        id: 'job-123', fileName: 'test.mp3', fileSize: 1000, durationSeconds: null,
+        status: 'failed', progress: 0, modelUsed: 'htdemucs', stems: [],
+        error: 'GPU out of memory', createdAt: new Date().toISOString(),
+      } as Job));
 
-    it('should stop polling when job fails', () => {
-      component.job = {
-        id: 'job-1',
-        state: JobStatus.FAILED,
-        progress: 30,
-        error: 'GPU error',
-        stems: [],
-      };
-      fixture.detectChanges();
-      // Polling should have stopped.
+      component.onUpload({ file: new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' }) });
+      await mockApi.getJob('job-123').toPromise();
+      expect(component.activeJob!.status).toBe('failed');
     });
   });
 
-  describe('stem loading', () => {
-    it('should load stems when job completes', () => {
-      component.job = {
-        id: 'job-1',
-        state: JobStatus.COMPLETED,
-        progress: 100,
-        stems: [],
-      };
-      component.onJobUpdated();
-      expect(mockApiService.getStems).toHaveBeenCalledWith('job-1');
-    });
+  describe('completion handling', () => {
+    it('should populate completedStems on completion', async () => {
+      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+      vi.spyOn(mockApi, 'getJob').mockReturnValue(of({
+        id: 'job-123', fileName: 'test.mp3', fileSize: 1000, durationSeconds: null,
+        status: 'completed', progress: 100, modelUsed: 'htdemucs',
+        stems: [
+          { name: 'vocals', displayName: 'Vocals', path: '/vocals.mp3', sizeBytes: 5000 },
+          { name: 'drums', displayName: 'Drums', path: '/drums.mp3', sizeBytes: 4000 },
+        ],
+        createdAt: new Date().toISOString(),
+      } as Job));
 
-    it('should not load stems when job is not completed', () => {
-      component.job = {
-        id: 'job-1',
-        state: JobStatus.PROCESSING,
-        progress: 50,
-        stems: [],
-      };
-      component.onJobUpdated();
-      expect(mockApiService.getStems).not.toHaveBeenCalled();
+      component.onUpload({ file: new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' }) });
+      await mockApi.getJob('job-123').toPromise();
+      expect(component.completedStems.length).toBe(2);
+      expect(component.completedStems[0].name).toBe('vocals');
     });
   });
 
-  describe('job cancellation', () => {
-    it('should call cancelJob when cancel is triggered', () => {
-      component.job = {
-        id: 'job-1',
-        state: JobStatus.PROCESSING,
-        progress: 50,
-        stems: [],
-      };
-      component.cancelJob();
-      // The cancel should have been triggered.
+  describe('utility methods', () => {
+    it('should format sizes correctly', () => {
+      expect(component.formatSize(500)).toBe('500 B');
+      expect(component.formatSize(1500)).toBe('1 KB');
+      expect(component.formatSize(1_572_864)).toBe('1.5 MB');
+    });
+
+    it('should return model label', () => {
+      expect(component.getModelLabel()).toBe('HTDemucs');
+    });
+
+    it('should set model name', () => {
+      component.setModelName('mdxdemucs');
+      expect(component.modelName).toBe('mdxdemucs');
+    });
+
+    it('should set output format', () => {
+      component.setOutputFormat('wav');
+      expect(component.outputFormat).toBe('wav');
+    });
+
+    it('should return isProcessing based on activeJob status', () => {
+      component.activeJob = { jobId: '1', fileName: 'test.mp3', status: 'processing', progress: 50 };
+      expect(component.isProcessing()).toBe(true);
+
+      component.activeJob = { jobId: '1', fileName: 'test.mp3', status: 'completed', progress: 100 };
+      expect(component.isProcessing()).toBe(false);
+    });
+
+    it('should open download URL for stem', () => {
+      component.activeJob = { jobId: 'job-123', fileName: 'test.mp3', status: 'completed', progress: 100 };
+      vi.spyOn(mockApi, 'getStemUrl').mockReturnValue('/api/stems/job-123/vocals');
+      vi.spyOn(window, 'open').mockImplementation(() => null);
+      component.onStemDownload('vocals');
+      expect(window.open).toHaveBeenCalledWith('/api/stems/job-123/vocals', '_blank');
     });
   });
 });

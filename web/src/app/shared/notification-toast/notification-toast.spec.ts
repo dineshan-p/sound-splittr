@@ -1,113 +1,91 @@
 /**
- * Tests for NotificationToast component.
+ * Tests for NotificationToastComponent.
  *
- * Verifies type-based styling, message display,
- * dismiss button, and auto-dismiss behavior.
+ * Verifies the toast displays the active notification from NotificationService,
+ * shows the correct type class, and dismisses on click.
  */
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { WritableSignal, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { NotificationToast } from './notification-toast';
-import { NotificationService } from '../../core/services/notification.service';
+import { vi } from 'vitest';
 
-describe('NotificationToast', () => {
-  let fixture: ComponentFixture<NotificationToast>;
-  let component: NotificationToast;
-  let notifService: NotificationService;
+import { NotificationToastComponent } from './notification-toast';
+import { NotificationService, NotificationType } from '../../core/services/notification.service';
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [NotificationToast],
-      providers: [NotificationService],
-    }).compileComponents();
+describe('NotificationToastComponent', () => {
+  let component: NotificationToastComponent;
+  let fixture: ComponentFixture<NotificationToastComponent>;
+  let currentSignal: WritableSignal<any>;
 
-    fixture = TestBed.createComponent(NotificationToast);
+  beforeEach(() => {
+    currentSignal = signal(null);
+
+    const notifObj: any = {
+      current: currentSignal,
+      show: vi.fn(),
+      clear: vi.fn(() => { currentSignal.set(null); }),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [NotificationToastComponent],
+      providers: [{ provide: NotificationService, useValue: notifObj }],
+    });
+
+    fixture = TestBed.createComponent(NotificationToastComponent);
     component = fixture.componentInstance;
-    notifService = TestBed.inject(NotificationService);
     fixture.detectChanges();
   });
 
-  describe('initial state', () => {
-    it('should create', () => {
-      expect(component).toBeTruthy();
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should not render when no notification', () => {
+    currentSignal.set(null);
+    fixture.detectChanges();
+
+    const toast = fixture.debugElement.query(By.css('.toast'));
+    expect(toast).toBeNull();
+  });
+
+  it('should render toast when notification is set', () => {
+    currentSignal.set({
+      id: 1,
+      message: 'Test notification',
+      type: 'info' as NotificationType,
+      duration: 4000,
     });
+    fixture.detectChanges();
 
-    it('should not display when no notification', () => {
-      const toastEl = fixture.debugElement.query(By.css('.notification-toast'));
-      expect(toastEl.nativeElement.classList.contains('visible')).toBe(false);
+    const toast = fixture.debugElement.query(By.css('.toast'));
+    expect(toast).not.toBeNull();
+    expect(toast.nativeElement.textContent).toContain('Test notification');
+  });
+
+  it('should show correct type class', () => {
+    currentSignal.set({
+      id: 1,
+      message: 'Error message',
+      type: 'error' as NotificationType,
+      duration: 4000,
     });
+    fixture.detectChanges();
+
+    const toast = fixture.debugElement.query(By.css('.toast'));
+    expect(toast.nativeElement.classList.contains('type-error')).toBe(true);
   });
 
-  describe('notification display', () => {
-    it('should display notification message', fakeAsync(() => {
-      notifService.show('Test message', 'info');
-      tick();
-      fixture.detectChanges();
+  it('should dismiss on click', () => {
+    currentSignal.set({
+      id: 1,
+      message: 'Test',
+      type: 'info' as NotificationType,
+      duration: 4000,
+    });
+    fixture.detectChanges();
 
-      const msgEl = fixture.debugElement.query(By.css('.notification-message'));
-      expect(msgEl.nativeElement.textContent).toContain('Test message');
-    }));
-
-    it('should show info type styling', fakeAsync(() => {
-      notifService.info('Info notification');
-      tick();
-      fixture.detectChanges();
-
-      const toastEl = fixture.debugElement.query(By.css('.notification-toast'));
-      expect(toastEl.nativeElement.classList.contains('info')).toBe(true);
-    }));
-
-    it('should show success type styling', fakeAsync(() => {
-      notifService.success('Success notification');
-      tick();
-      fixture.detectChanges();
-
-      const toastEl = fixture.debugElement.query(By.css('.notification-toast'));
-      expect(toastEl.nativeElement.classList.contains('success')).toBe(true);
-    }));
-
-    it('should show warning type styling', fakeAsync(() => {
-      notifService.warning('Warning notification');
-      tick();
-      fixture.detectChanges();
-
-      const toastEl = fixture.debugElement.query(By.css('.notification-toast'));
-      expect(toastEl.nativeElement.classList.contains('warning')).toBe(true);
-    }));
-
-    it('should show error type styling', fakeAsync(() => {
-      notifService.error('Error notification');
-      tick();
-      fixture.detectChanges();
-
-      const toastEl = fixture.debugElement.query(By.css('.notification-toast'));
-      expect(toastEl.nativeElement.classList.contains('error')).toBe(true);
-    }));
-  });
-
-  describe('auto-dismiss', () => {
-    it('should hide notification after duration', fakeAsync(() => {
-      notifService.show('Auto-dismiss', 'info', 300);
-      tick(300);
-      fixture.detectChanges();
-
-      const toastEl = fixture.debugElement.query(By.css('.notification-toast'));
-      expect(toastEl.nativeElement.classList.contains('visible')).toBe(false);
-    }));
-  });
-
-  describe('manual dismiss', () => {
-    it('should hide notification when dismiss button is clicked', fakeAsync(() => {
-      notifService.show('Dismiss me', 'info', 5000);
-      tick();
-      fixture.detectChanges();
-
-      const dismissBtn = fixture.debugElement.query(By.css('.dismiss-btn'));
-      dismissBtn.nativeElement.click();
-      tick();
-      fixture.detectChanges();
-
-      const toastEl = fixture.debugElement.query(By.css('.notification-toast'));
-      expect(toastEl.nativeElement.classList.contains('visible')).toBe(false);
-    }));
+    const dismissBtn = fixture.debugElement.query(By.css('.toast-dismiss'));
+    dismissBtn.nativeElement.click();
+    expect(currentSignal()).toBeNull();
   });
 });

@@ -1,171 +1,76 @@
 /**
- * Tests for StemList component.
+ * Tests for StemListComponent.
  *
- * Verifies stem rendering, click handlers, active stem tracking,
- * and empty state display.
+ * Verifies stem list rendering, total size calculation, and download events.
  */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { StemList } from './stem-list';
-import { Stem } from '../../models';
 
-describe('StemList', () => {
-  let fixture: ComponentFixture<StemList>;
-  let component: StemList;
+import { StemListComponent } from './stem-list';
+import type { StemInfo } from '../../core/models';
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [StemList],
-    }).compileComponents();
+describe('StemListComponent', () => {
+  let component: StemListComponent;
+  let fixture: ComponentFixture<StemListComponent>;
 
-    fixture = TestBed.createComponent(StemList);
+  const mockStems: StemInfo[] = [
+    { name: 'vocals', displayName: 'Vocals', path: '/vocals.mp3', sizeBytes: 5_000_000 },
+    { name: 'drums', displayName: 'Drums', path: '/drums.mp3', sizeBytes: 4_000_000 },
+    { name: 'bass', displayName: 'Bass', path: '/bass.mp3', sizeBytes: 3_000_000 },
+  ];
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [StemListComponent],
+    });
+
+    fixture = TestBed.createComponent(StemListComponent);
     component = fixture.componentInstance;
+    // Set required inputs BEFORE detectChanges
+    fixture.componentRef.setInput('stems', mockStems);
+    fixture.componentRef.setInput('downloadBaseUrl', 'http://localhost:8000/api/stems/job1');
     fixture.detectChanges();
   });
 
-  describe('initial state', () => {
-    it('should create', () => {
-      expect(component).toBeTruthy();
-    });
-
-    it('should render a list element', () => {
-      const listEl = fixture.debugElement.query(By.css('.stem-list'));
-      expect(listEl).toBeTruthy();
-    });
+  it('should create', () => {
+    expect(component).toBeTruthy();
   });
 
-  describe('empty state', () => {
-    it('should show no stems message when stems array is empty', () => {
-      component.stems = [];
-      fixture.detectChanges();
-      const msgEl = fixture.debugElement.query(By.css('.no-stems'));
-      expect(msgEl).toBeTruthy();
-      expect(msgEl.nativeElement.textContent).toContain('No stems');
-    });
-
-    it('should show no stems message when stems is null', () => {
-      component.stems = null;
-      fixture.detectChanges();
-      const msgEl = fixture.debugElement.query(By.css('.no-stems'));
-      expect(msgEl).toBeTruthy();
-    });
+  it('should convert stems to player format', () => {
+    const playerStems = component.playerStems;
+    expect(playerStems.length).toBe(3);
+    expect(playerStems[0].name).toBe('vocals');
+    expect(playerStems[0].src).toBe('http://localhost:8000/api/stems/job1/vocals');
   });
 
-  describe('stem rendering', () => {
-    it('should render a list item for each stem', () => {
-      component.stems = [
-        { name: 'vocals', url: '/stems/job-1/vocals.wav' },
-        { name: 'drums', url: '/stems/job-1/drums.wav' },
-        { name: 'bass', url: '/stems/job-1/bass.wav' },
-      ];
-      fixture.detectChanges();
-
-      const items = fixture.debugElement.queryAll(By.css('.stem-item'));
-      expect(items.length).toBe(3);
-    });
-
-    it('should display the stem name in each item', () => {
-      component.stems = [
-        { name: 'vocals', url: '/stems/job-1/vocals.wav' },
-        { name: 'drums', url: '/stems/job-1/drums.wav' },
-      ];
-      fixture.detectChanges();
-
-      const items = fixture.debugElement.queryAll(By.css('.stem-item'));
-      expect(items[0].nativeElement.textContent).toContain('vocals');
-      expect(items[1].nativeElement.textContent).toContain('drums');
-    });
-
-    it('should render a stem-player for each stem', () => {
-      component.stems = [
-        { name: 'vocals', url: '/stems/job-1/vocals.wav' },
-        { name: 'drums', url: '/stems/job-1/drums.wav' },
-      ];
-      fixture.detectChanges();
-
-      const players = fixture.debugElement.queryAll(By.css('stem-player'));
-      expect(players.length).toBe(2);
-    });
+  it('should calculate total size', () => {
+    // 12,000,000 bytes = 11.4 MB (12_000_000 / 1_048_576)
+    expect(component.totalSize).toBe('11.4 MB');
   });
 
-  describe('stem selection', () => {
-    it('should highlight the active stem', () => {
-      component.stems = [
-        { name: 'vocals', url: '/stems/job-1/vocals.wav' },
-        { name: 'drums', url: '/stems/job-1/drums.wav' },
-      ];
-      component.activeStem = 'vocals';
-      fixture.detectChanges();
-
-      const items = fixture.debugElement.queryAll(By.css('.stem-item'));
-      expect(items[0].nativeElement.classList.contains('active')).toBe(true);
-      expect(items[1].nativeElement.classList.contains('active')).toBe(false);
-    });
-
-    it('should emit selectedStem when a stem item is clicked', () => {
-      component.stems = [
-        { name: 'vocals', url: '/stems/job-1/vocals.wav' },
-        { name: 'drums', url: '/stems/job-1/drums.wav' },
-      ];
-      fixture.detectChanges();
-
-      let selectedStem: string | null = null;
-      component.selectedStem.subscribe((s) => { selectedStem = s; });
-
-      const items = fixture.debugElement.queryAll(By.css('.stem-item'));
-      items[1].nativeElement.click();
-      expect(selectedStem).toBe('drums');
-    });
-
-    it('should not emit when clicking the same stem', () => {
-      component.stems = [
-        { name: 'vocals', url: '/stems/job-1/vocals.wav' },
-      ];
-      component.activeStem = 'vocals';
-      fixture.detectChanges();
-
-      let emitted = false;
-      component.selectedStem.subscribe(() => { emitted = true; });
-
-      const items = fixture.debugElement.queryAll(By.css('.stem-item'));
-      items[0].nativeElement.click();
-      expect(emitted).toBe(false);
-    });
+  it('should format small sizes in bytes', () => {
+    fixture.componentRef.setInput('stems', [{ name: 'test', displayName: 'Test', path: '/test.mp3', sizeBytes: 500 }]);
+    fixture.detectChanges();
+    expect(component.totalSize).toBe('500 B');
   });
 
-  describe('stem name formatting', () => {
-    it('should display stem names with proper capitalization', () => {
-      component.stems = [
-        { name: 'MIXED_LETTER', url: '/stems/job-1/mixed.wav' },
-      ];
-      fixture.detectChanges();
-      const items = fixture.debugElement.queryAll(By.css('.stem-item'));
-      // The stem name should be displayed as-is or formatted.
-      expect(items[0].nativeElement.textContent).toContain('MIXED_LETTER');
-    });
-
-    it('should handle empty stem names', () => {
-      component.stems = [
-        { name: '', url: '/stems/job-1/empty.wav' },
-      ];
-      fixture.detectChanges();
-      const items = fixture.debugElement.queryAll(By.css('.stem-item'));
-      expect(items.length).toBe(1);
-    });
+  it('should format medium sizes in KB', () => {
+    // 1500 bytes = 1.46 KB → "1 KB"
+    fixture.componentRef.setInput('stems', [{ name: 'test', displayName: 'Test', path: '/test.mp3', sizeBytes: 1500 }]);
+    fixture.detectChanges();
+    expect(component.totalSize).toBe('1 KB');
   });
 
-  describe('multiple stems', () => {
-    it('should render all 4 stems for a full separation', () => {
-      component.stems = [
-        { name: 'vocals', url: '/stems/job-1/vocals.wav' },
-        { name: 'drums', url: '/stems/job-1/drums.wav' },
-        { name: 'bass', url: '/stems/job-1/bass.wav' },
-        { name: 'melody', url: '/stems/job-1/melody.wav' },
-      ];
-      fixture.detectChanges();
+  it('should emit stemDownloaded on stem download', () => {
+    let emittedName: string | null = null;
+    component.stemDownloaded.subscribe((name) => { emittedName = name; });
+    component.onStemDownload('vocals');
+    expect(emittedName).toBe('vocals');
+  });
 
-      const items = fixture.debugElement.queryAll(By.css('.stem-item'));
-      expect(items.length).toBe(4);
-    });
+  it('should emit downloadAll', () => {
+    let emitted = false;
+    component.downloadAll.subscribe(() => { emitted = true; });
+    component.onDownloadAll();
+    expect(emitted).toBe(true);
   });
 });

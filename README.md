@@ -224,7 +224,7 @@ pytest tests/integration/test_integration.py -v --tb=short
 pytest tests/test_edge_cases.py -v
 
 # Angular unit tests
-cd web && ng test
+cd web && npx ng test
 ```
 
 ### Test Coverage

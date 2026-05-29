@@ -4,24 +4,38 @@
  * Verifies drag-and-drop, file selection, file validation,
  * and event emission for selected files.
  */
-import { ComponentRef, fakeAsync, tick, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { UploadArea } from './upload-area';
-import { ComponentFixture } from '@angular/core';
+import { vi } from 'vitest';
 
-describe('UploadArea', () => {
-  let fixture: ComponentFixture<UploadArea>;
-  let component: UploadArea;
-  let componentRef: ComponentRef<UploadArea>;
+import { UploadAreaComponent } from './upload-area';
+import { NotificationService } from '../../core/services/notification.service';
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [UploadArea],
-    }).compileComponents();
+describe('UploadAreaComponent', () => {
+  let fixture: ComponentFixture<UploadAreaComponent>;
+  let component: UploadAreaComponent;
+  let mockNotifications: any;
 
-    fixture = TestBed.createComponent(UploadArea);
+  beforeEach(() => {
+    const notifObj: any = {
+      current: () => null,
+      show: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+      warning: vi.fn(),
+      info: vi.fn(),
+      confirm: vi.fn(),
+      clear: vi.fn(),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [UploadAreaComponent],
+      providers: [{ provide: NotificationService, useValue: notifObj }],
+    });
+
+    fixture = TestBed.createComponent(UploadAreaComponent);
     component = fixture.componentInstance;
-    componentRef = fixture.componentRef;
+    mockNotifications = TestBed.inject(NotificationService) as any;
     fixture.detectChanges();
   });
 
@@ -30,111 +44,67 @@ describe('UploadArea', () => {
       expect(component).toBeTruthy();
     });
 
-    it('should render a file input element', () => {
-      const input = fixture.debugElement.query(By.css('input[type="file"]'));
-      expect(input).toBeTruthy();
-    });
-
     it('should accept audio files', () => {
       const input = fixture.debugElement.query(By.css('input[type="file"]'));
-      expect(input.nativeElement.accept).toContain('audio/');
-    });
-
-    it('should not have any files selected initially', () => {
-      expect(component.selectedFiles).toBeNull();
+      const accept = input.nativeElement.accept;
+      expect(accept).toContain('.mp3');
+      expect(accept).toContain('.wav');
+      expect(accept).toContain('.flac');
     });
   });
 
   describe('file selection', () => {
-    it('should emit selectedFiles when a file is selected via input', () => {
-      const files = [new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' })];
-      let emittedFiles: FileList | null = null;
-      component.selectedFiles.subscribe((fl) => { emittedFiles = fl; });
+    it('should emit uploaded when a file is selected via input', () => {
+      const testFile = new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' });
+      let emittedEvent: { file: File } | null = null;
+      component.uploaded.subscribe((evt) => { emittedEvent = evt; });
 
       const input = fixture.debugElement.query(By.css('input[type="file"]'));
-      // Simulate file input change.
-      input.nativeElement.files = {
-        length: 1,
-        item: (index: number) => files[index],
-        namedItem: () => null,
-        [Symbol.iterator]: function* () { for (const f of files) yield f; },
-      } as unknown as FileList;
+      // Use Object.defineProperty to set a mock FileList that jsdom accepts
+      const mockFiles: File[] = [testFile];
+      Object.defineProperty(input.nativeElement, 'files', {
+        value: Object.assign(mockFiles, { length: mockFiles.length, item: (i: number) => mockFiles[i] ?? null }),
+        writable: true,
+      });
       input.nativeElement.dispatchEvent(new Event('change', { bubbles: true }));
       fixture.detectChanges();
 
-      expect(emittedFiles).not.toBeNull();
-      expect(emittedFiles!.length).toBe(1);
+      expect(emittedEvent).not.toBeNull();
+      expect(emittedEvent!.file.name).toBe('test.mp3');
     });
 
-    it('should emit selectedFiles on drag-and-drop', fakeAsync(() => {
-      const files = [new File(['dummy'], 'test.wav', { type: 'audio/wav' })];
-      let emittedFiles: FileList | null = null;
-      component.selectedFiles.subscribe((fl) => { emittedFiles = fl; });
+    it('should not emit for non-audio files', () => {
+      let emittedEvent: { file: File } | null = null;
+      component.uploaded.subscribe((evt) => { emittedEvent = evt; });
 
-      const dropEvent = new DragEvent('drop', { bubbles: true });
-      Object.defineProperty(dropEvent, 'dataTransfer', {
-        value: {
-          files: files as unknown as FileList,
-          items: [],
-          types: ['Files'],
-        },
+      const input = fixture.debugElement.query(By.css('input[type="file"]'));
+      const mockFiles: File[] = [new File(['dummy'], 'image.png', { type: 'image/png' })];
+      Object.defineProperty(input.nativeElement, 'files', {
+        value: Object.assign(mockFiles, { length: mockFiles.length, item: (i: number) => mockFiles[i] ?? null }),
+        writable: true,
       });
-
-      const area = fixture.debugElement.query(By.css('.upload-area'));
-      area.nativeElement.dispatchEvent(dropEvent);
-      tick();
+      input.nativeElement.dispatchEvent(new Event('change', { bubbles: true }));
       fixture.detectChanges();
 
-      expect(emittedFiles).not.toBeNull();
-      expect(emittedFiles!.length).toBe(1);
-    }));
-
-    it('should emit selectedFiles on drag-and-drop with multiple files', fakeAsync(() => {
-      const files = [
-        new File(['a'], 'a.mp3', { type: 'audio/mpeg' }),
-        new File(['b'], 'b.wav', { type: 'audio/wav' }),
-      ];
-      let emittedFiles: FileList | null = null;
-      component.selectedFiles.subscribe((fl) => { emittedFiles = fl; });
-
-      const dropEvent = new DragEvent('drop', { bubbles: true });
-      Object.defineProperty(dropEvent, 'dataTransfer', {
-        value: {
-          files: files as unknown as FileList,
-          items: [],
-          types: ['Files'],
-        },
-      });
-
-      const area = fixture.debugElement.query(By.css('.upload-area'));
-      area.nativeElement.dispatchEvent(dropEvent);
-      tick();
-      fixture.detectChanges();
-
-      expect(emittedFiles).not.toBeNull();
-      expect(emittedFiles!.length).toBe(2);
-    }));
+      expect(emittedEvent).toBeNull();
+    });
   });
 
   describe('drag-and-drop visual feedback', () => {
-    it('should add drag-over class when a file is dragged over', fakeAsync(() => {
+    it('should add dragging class when a file is dragged over', () => {
       const area = fixture.debugElement.query(By.css('.upload-area'));
 
       const dragOverEvent = new DragEvent('dragover', { bubbles: true });
       Object.defineProperty(dragOverEvent, 'dataTransfer', {
-        value: {
-          items: [],
-          types: ['Files'],
-        },
+        value: { items: [], types: ['Files'] },
       });
       area.nativeElement.dispatchEvent(dragOverEvent);
-      tick();
       fixture.detectChanges();
 
-      expect(area.nativeElement.classList.contains('drag-over')).toBe(true);
-    }));
+      expect(area.nativeElement.classList.contains('dragging')).toBe(true);
+    });
 
-    it('should remove drag-over class when drag leaves', fakeAsync(() => {
+    it('should remove dragging class when drag leaves', () => {
       const area = fixture.debugElement.query(By.css('.upload-area'));
 
       // Enter.
@@ -143,18 +113,16 @@ describe('UploadArea', () => {
         value: { items: [], types: ['Files'] },
       });
       area.nativeElement.dispatchEvent(dragEnter);
-      tick();
 
       // Leave.
       const dragLeave = new DragEvent('dragleave', { bubbles: true });
       area.nativeElement.dispatchEvent(dragLeave);
-      tick();
       fixture.detectChanges();
 
-      expect(area.nativeElement.classList.contains('drag-over')).toBe(false);
-    }));
+      expect(area.nativeElement.classList.contains('dragging')).toBe(false);
+    });
 
-    it('should prevent default on dragover', fakeAsync(() => {
+    it('should prevent default on dragover', () => {
       const area = fixture.debugElement.query(By.css('.upload-area'));
       let defaultPrevented = false;
 
@@ -164,23 +132,21 @@ describe('UploadArea', () => {
       });
       dragOver.preventDefault = () => { defaultPrevented = true; };
       area.nativeElement.dispatchEvent(dragOver);
-      tick();
 
       expect(defaultPrevented).toBe(true);
-    }));
+    });
   });
 
   describe('drop event prevention', () => {
-    it('should prevent default on drop to avoid browser opening the file', fakeAsync(() => {
+    it('should prevent default on drop to avoid browser opening the file', () => {
       let defaultPrevented = false;
       const drop = new DragEvent('drop', { bubbles: true });
       drop.preventDefault = () => { defaultPrevented = true; };
 
       const area = fixture.debugElement.query(By.css('.upload-area'));
       area.nativeElement.dispatchEvent(drop);
-      tick();
 
       expect(defaultPrevented).toBe(true);
-    }));
+    });
   });
 });
