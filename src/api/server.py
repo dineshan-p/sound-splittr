@@ -9,8 +9,29 @@ from typing import Any
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="Sound Splittr API", version="1.0.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Server startup and shutdown lifecycle.
+
+    Prints GPU availability and queue configuration on startup.
+    Runs once when the server process boots and on shutdown.
+    """
+    from src.api.queue import get_gpu_memory_info
+
+    gpu = get_gpu_memory_info()
+    print(f"\n🎚️  Sound Splittr API starting on :8000")
+    if gpu:
+        print(f"  GPU: {gpu['free_gb']:.1f}GB free / {gpu['total_gb']:.1f}GB total")
+    else:
+        print("  No GPU detected — running in CPU mode")
+    print(f"  Queue: max 5 jobs, max 2 concurrent")
+    print()
+    yield
+    # Shutdown logic can go here if needed
+
+app = FastAPI(title="Sound Splittr API", version="1.0.0", lifespan=lifespan)
 
 UPLOAD_DIR = Path("./uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -58,11 +79,11 @@ def _validate_format(fmt: str) -> str:
 def _validate_model(model: str) -> str:
     """Validate model name against the list of known Demucs models.
 
-    Raises 400 if the model is not one of htdemucs, mdxdemucs, or htdemucs_6s.
+    Raises 400 if the model is not one of htdemucs, mdx, or htdemucs_6s.
     Returns the lowercased, stripped model name.
     """
     model = model.lower().strip()
-    valid = {"htdemucs", "mdxdemucs", "htdemucs_6s"}
+    valid = {"htdemucs", "mdx", "htdemucs_6s"}
     if model not in valid:
         raise HTTPException(400, f"Invalid model '{model}'. Choose from: {', '.join(sorted(valid))}")
     return model
@@ -103,7 +124,7 @@ async def upload_audio(
 
     Request body:
         file: audio file (multipart/form-data)
-        model: one of htdemucs, mdxdemucs, htdemucs_6s
+        model: one of htdemucs, mdx, htdemucs_6s
         format: mp3, wav, or flac
         bitrate: MP3 encoding bitrate in kbps (only used when format=mp3)
 
@@ -261,25 +282,6 @@ async def list_models():
             "stemCount": info["stem_count"],
         })
     return models
-
-
-@app.on_event("startup")
-async def startup():
-    """Log startup info when the FastAPI server starts.
-
-    Prints GPU availability and queue configuration to the console.
-    This runs once when the server process boots.
-    """
-    from src.api.queue import get_gpu_memory_info
-
-    gpu = get_gpu_memory_info()
-    print(f"\n🎚️  Sound Splittr API starting on :8000")
-    if gpu:
-        print(f"  GPU: {gpu['free_gb']:.1f}GB free / {gpu['total_gb']:.1f}GB total")
-    else:
-        print("  No GPU detected — running in CPU mode")
-    print(f"  Queue: max 5 jobs, max 2 concurrent")
-    print()
 
 
 if __name__ == "__main__":

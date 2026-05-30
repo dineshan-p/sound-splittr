@@ -30,7 +30,7 @@ class TestApiValidation:
         """_validate_model should be case-insensitive."""
         from src.api.server import _validate_model
         assert _validate_model("HTDEMUCS") == "htdemucs"
-        assert _validate_model("MdxDemucs") == "mdxdemucs"
+        assert _validate_model("Mdx") == "mdx"
         assert _validate_model("HTDEMUCS_6S") == "htdemucs_6s"
 
     def test_validate_model_invalid_values(self):

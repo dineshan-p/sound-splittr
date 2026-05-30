@@ -102,8 +102,8 @@ export const AVAILABLE_MODELS: ModelOption[] = [
 		stemCount: 4,
 	},
 	{
-		id: "mdxdemucs",
-		label: "MDXDemucs (Highest Quality)",
+		id: "mdx",
+		label: "MDX (Highest Quality)",
 		description: "Superior separation but slower processing.",
 		stemCount: 4,
 	},

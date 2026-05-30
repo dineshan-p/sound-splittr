@@ -85,3 +85,13 @@ class ResizeObserverMock {
     });
   }
 };
+
+// Mock HTMLAudioElement (jsdom does not implement HTMLMediaElement).
+// Calling pause()/play() on audio elements throws "Not implemented" to stderr.
+// We patch the prototype so the component's audio operations are no-ops.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const originalAudioPause = (HTMLAudioElement.prototype as any).pause;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(HTMLAudioElement.prototype as any).pause = function() { /* no-op */ };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(HTMLAudioElement.prototype as any).play = function() { return Promise.resolve(); };

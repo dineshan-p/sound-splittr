@@ -77,8 +77,8 @@ describe('SettingsPanelComponent', () => {
   });
 
   it('should update settings when model changes', () => {
-    component.model = 'mdxdemucs';
-    expect(mockPatch).toHaveBeenCalledWith({ defaultModel: 'mdxdemucs' });
+    component.model = 'mdx';
+    expect(mockPatch).toHaveBeenCalledWith({ defaultModel: 'mdx' });
   });
 
   it('should update settings when format changes', () => {

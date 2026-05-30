@@ -5,25 +5,41 @@
  * job listing, model fetching, health check, and error handling.
  */
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
+import type { Observable } from 'rxjs';
 
 import { ApiService } from './api.service';
 import { SettingsService } from './settings.service';
+import { HttpClient } from '@angular/common/http';
+import type { Job, ModelOption, SplitRequest, UploadResponse } from '../models';
 
 describe('ApiService (Extended)', () => {
   let service: ApiService;
   let settingsService: SettingsService;
+  let httpMock: HttpClient;
 
-  beforeEach(() => {
+  beforeAll(() => {
     TestBed.configureTestingModule({
       providers: [
         ApiService,
         SettingsService,
-        provideHttpClient(withInterceptorsFromDi()),
+        {
+          provide: HttpClient,
+          useValue: {
+            get: vi.fn(),
+            post: vi.fn(),
+            delete: vi.fn(),
+          },
+        },
       ],
     });
     service = TestBed.inject(ApiService);
     settingsService = TestBed.inject(SettingsService);
+    httpMock = TestBed.inject(HttpClient) as HttpClient;
+  });
+
+  afterAll(() => {
+    TestBed.resetTestingModule();
   });
 
   // ---------------------------------------------------------------------------
@@ -42,31 +58,42 @@ describe('ApiService (Extended)', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Edge cases
+  // Edge cases — upload error
   // ---------------------------------------------------------------------------
 
-  it('should handle upload with large file', async () => {
+  it('should handle upload with large file error', async () => {
     const file = new Blob(['x'.repeat(10_000_000)], { type: 'audio/mpeg' });
     const fileObj = new File([file], 'large.mp3', { type: 'audio/mpeg' });
     let errorStatus: number | undefined;
+
+    (httpMock.post as any).mockReturnValue(
+      throwError(() => ({ status: 500, message: 'Internal server error' }))
+    );
 
     service.uploadAudio(fileObj, { model: 'htdemucs', format: 'wav' }).subscribe({
       next: () => { throw new Error('should have errored'); },
       error: (err) => { errorStatus = err.status; },
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    // The backend is not running, so we expect a connection error
-    expect(errorStatus).toBeDefined();
+    expect(errorStatus).toBe(500);
   });
+
+  // ---------------------------------------------------------------------------
+  // Edge cases — job error
+  // ---------------------------------------------------------------------------
 
   it('should handle getJob with invalid job ID', async () => {
     let errorStatus: number | undefined;
+
+    (httpMock.get as any).mockReturnValue(
+      throwError(() => ({ status: 404, message: 'Not found' }))
+    );
+
     service.getJob('').subscribe({
       next: () => { throw new Error('should have errored'); },
       error: (err) => { errorStatus = err.status; },
     });
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(errorStatus).toBeDefined();
+
+    expect(errorStatus).toBe(404);
   });
 });

@@ -91,7 +91,7 @@ Pipeline defaults. The backend reads this at startup.
 
 ```yaml
 model:
-  name: htdemucs           # htdemucs | mdxdemucs | htdemucs_6s
+  name: htdemucs           # htdemucs | mdx | htdemucs_6s
   device: auto             # auto | cuda | cpu
   gpu_mem_frac: 0.5        # Fraction of GPU memory to reserve
 

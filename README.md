@@ -55,7 +55,7 @@ python src/cli/main.py \
 |------|--------|---------|-------------|
 | `-i, --input` | path | *(required)* | Input audio file (MP3, WAV, FLAC, OGG) |
 | `-o, --output` | path | *(required)* | Directory for output stems |
-| `-m, --model` | `htdemucs` \| `mdxdemucs` \| `htdemucs_6s` | `htdemucs` | Which AI model to use |
+| `-m, --model` | `htdemucs` \| `mdx` \| `htdemucs_6s` | `htdemucs` | Which AI model to use |
 | `-d, --device` | `auto` \| `cuda` \| `cpu` | `auto` | Hardware device (`auto` picks GPU if available) |
 | `-f, --format` | `mp3` \| `wav` \| `flac` | `mp3` | Output audio format |
 | `-b, --bitrate` | integer | `320` | MP3 bitrate in kbps (only used with `--format mp3`) |
@@ -72,7 +72,7 @@ python src/cli/main.py -i song.wav -o stems/ -f flac
 
 **Use the higher-quality MDX model:**
 ```bash
-python src/cli/main.py -i song.mp3 -o stems/ -m mdxdemucs -b 320
+python src/cli/main.py -i song.mp3 -o stems/ -m mdx -b 320
 ```
 
 **Force CPU mode (no GPU):**
@@ -139,7 +139,7 @@ The backend exposes these endpoints:
 ```bash
 cd web
 npm install          # Install once, or after dependencies change
-ng serve --proxy-config proxy.conf.json
+npx ng serve --proxy-config proxy.conf.json
 ```
 
 The `proxy.conf.json` routes all `/api/*` requests to the backend at `localhost:8000`, so the frontend and backend communicate seamlessly.
@@ -165,7 +165,7 @@ Open **`http://localhost:4200`** in your browser.
 
 ```bash
 cd web
-ng build --configuration production
+npx ng build --configuration production
 # Output goes to dist/sound-splittr-web/
 ```
 
@@ -184,7 +184,7 @@ uvicorn src.api.server:app --host 0.0.0.0 --port 8000
 
 # Terminal 2 — Frontend
 cd web
-ng serve --proxy-config proxy.conf.json
+npx ng serve --proxy-config proxy.conf.json
 
 # Open http://localhost:4200 in your browser
 ```
@@ -248,7 +248,7 @@ See `TEST_SUMMARY.md` for the full breakdown.
 | Model | Stems | Description | Best For |
 |-------|-------|-------------|----------|
 | `htdemucs` | 4 (vocals, drums, bass, other) | Balanced speed and quality | General purpose, live DJing |
-| `mdxdemucs` | 4 (vocals, drums, bass, other) | Higher quality, slower | Studio-grade separation |
+| `mdx` | 4 (vocals, drums, bass, other) | Higher quality, slower | Studio-grade separation |
 | `htdemucs_6s` | 6 (vocals, drums, bass, other, guitar, piano) | 6-way split | Detailed stem extraction |
 
 ---
@@ -339,7 +339,7 @@ sound-splittr/
 → Make sure the backend is running: `curl http://localhost:8000/api/health` should return `{"status":"ok",...}`
 
 **"Stems are all silence or empty"**
-→ Try a different model (`mdxdemucs` often works better for complex mixes). Some audio formats may need conversion first.
+→ Try a different model (`mdx` often works better for complex mixes). Some audio formats may need conversion first.
 
 ---
 

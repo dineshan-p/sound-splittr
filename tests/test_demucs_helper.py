@@ -27,10 +27,10 @@ class TestModelInfo:
         from src.core.demucs_helper import ModelInfo
         assert ModelInfo["htdemucs"]["stem_count"] == 4
 
-    def test_mdxdemucs_has_4_stems(self):
-        """mdxdemucs should have 4 stems."""
+    def test_mdx_has_4_stems(self):
+        """mdx should have 4 stems."""
         from src.core.demucs_helper import ModelInfo
-        assert ModelInfo["mdxdemucs"]["stem_count"] == 4
+        assert ModelInfo["mdx"]["stem_count"] == 4
 
     def test_htdemucs_6s_has_6_stems(self):
         """htdemucs_6s should have 6 stems."""

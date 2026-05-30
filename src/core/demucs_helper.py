@@ -19,7 +19,7 @@ ModelInfo: Dict[str, Dict] = {
         "stem_count": 4,
         "recommended_for": ["rock", "pop", "electronic"],
     },
-    "mdxdemucs": {
+    "mdx": {
         "description": "Meta model with superior quality but slower processing",
         "stem_count": 4,
         "recommended_for": ["high_quality", "studio"],

@@ -37,7 +37,7 @@ describe('SettingsService', () => {
       'sound-splittr-settings',
       JSON.stringify({
         apiUrl: 'http://custom:9000',
-        defaultModel: 'mdxdemucs',
+        defaultModel: 'mdx',
         defaultFormat: 'wav',
         defaultBitrate: 256,
       })
@@ -46,7 +46,7 @@ describe('SettingsService', () => {
     const service = TestBed.inject(SettingsService);
     const current = service.current();
     expect(current.apiUrl).toBe('http://custom:9000');
-    expect(current.defaultModel).toBe('mdxdemucs');
+    expect(current.defaultModel).toBe('mdx');
     expect(current.defaultFormat).toBe('wav');
     expect(current.defaultBitrate).toBe(256);
   });
@@ -105,14 +105,14 @@ describe('SettingsService', () => {
   it('should migrate old "model" key to "defaultModel"', () => {
     const oldData = {
       apiUrl: 'http://localhost:8000',
-      model: 'mdxdemucs',
+      model: 'mdx',
       format: 'mp3',
       bitrate: 320,
     };
     localStorage.setItem('sound-splittr-settings', JSON.stringify(oldData));
 
     const freshService = TestBed.inject(SettingsService);
-    expect(freshService.current().defaultModel).toBe('mdxdemucs');
+    expect(freshService.current().defaultModel).toBe('mdx');
     expect((freshService.current() as unknown as Record<string, unknown>)['model']).toBeUndefined();
   });
 

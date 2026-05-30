@@ -46,8 +46,8 @@ class TestValidation:
     def test_validate_model_htdemucs(self):
         assert _validate_model("htdemucs") == "htdemucs"
 
-    def test_validate_model_mdxdemucs(self):
-        assert _validate_model("mdxdemucs") == "mdxdemucs"
+    def test_validate_model_mdx(self):
+        assert _validate_model("mdx") == "mdx"
 
     def test_validate_model_htdemucs_6s(self):
         assert _validate_model("htdemucs_6s") == "htdemucs_6s"

@@ -6,7 +6,7 @@
  */
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, throwError, ReplaySubject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HomePage } from './home-page';
@@ -17,24 +17,37 @@ import type { Job, UploadResponse } from '../../core/models';
 
 describe('HomePage', () => {
   let component: HomePage;
-  let mockApi: ApiService;
+  let mockApi: Partial<ApiService>;
   let mockSettings: SettingsService;
   let mockNotifications: NotificationService;
 
+  // Keep direct references to the ReplaySubjects so tests can emit values
+  // without relying on mock internals.
+  let getJob$: ReplaySubject<Job>;
+  let ping$: ReplaySubject<any>;
+
   beforeEach(() => {
+    getJob$ = new ReplaySubject<Job>(1);
+    ping$ = new ReplaySubject<any>(1);
+
+    mockApi = {
+      uploadAudio: vi.fn(),
+      getJob: vi.fn().mockReturnValue(getJob$),
+      listJobs: vi.fn(),
+      deleteJob: vi.fn(),
+      getStemUrl: vi.fn(),
+      fetchModels: vi.fn(),
+      ping: vi.fn().mockReturnValue(ping$),
+      // apiUrl is a getter on the real ApiService that reads from SettingsService.
+      // We override it here so the template's `.replace()` call never sees undefined.
+      get apiUrl() { return 'http://localhost:8000'; },
+    };
+
     TestBed.configureTestingModule({
       imports: [HomePage],
       providers: [
         provideRouter([]),
-        { provide: ApiService, useValue: {
-          uploadAudio: vi.fn(),
-          getJob: vi.fn(),
-          listJobs: vi.fn(),
-          deleteJob: vi.fn(),
-          getStemUrl: vi.fn(),
-          fetchModels: vi.fn(),
-          ping: vi.fn(),
-        }},
+        { provide: ApiService, useValue: mockApi },
         { provide: SettingsService, useValue: {
           current: vi.fn(() => ({ apiUrl: 'http://localhost:8000', defaultModel: 'htdemucs', defaultFormat: 'mp3', defaultBitrate: 320 })),
           model: 'htdemucs',
@@ -57,7 +70,6 @@ describe('HomePage', () => {
     });
 
     component = TestBed.createComponent(HomePage).componentInstance;
-    mockApi = TestBed.inject(ApiService) as ApiService;
     mockSettings = TestBed.inject(SettingsService) as SettingsService;
     mockNotifications = TestBed.inject(NotificationService) as NotificationService;
   });
@@ -68,21 +80,19 @@ describe('HomePage', () => {
     });
 
     it('should set apiAvailable based on ping result', async () => {
-      vi.spyOn(mockApi, 'ping').mockReturnValue(of({ status: 'ok', queue_size: 0, active_count: 0, total_jobs: 0, gpu: null }));
       component.ngOnInit();
-      await mockApi.ping().toPromise();
+      ping$.next({ status: 'ok', queue_size: 0, active_count: 0, total_jobs: 0, gpu: null });
+      ping$.complete();
+      await new Promise(r => setTimeout(r, 50));
       expect(component.apiAvailable).toBe(true);
       expect(component.apiChecked).toBe(true);
     });
 
     it('should set apiAvailable to false when ping fails', async () => {
-      vi.spyOn(mockApi, 'ping').mockReturnValue(throwError(() => new Error('Not found')));
       component.ngOnInit();
-      try {
-        await mockApi.ping().toPromise();
-      } catch {
-        // Expected
-      }
+      ping$.error(new Error('Not found'));
+      ping$.complete();
+      await new Promise(r => setTimeout(r, 50));
       expect(component.apiAvailable).toBe(false);
     });
   });
@@ -90,7 +100,7 @@ describe('HomePage', () => {
   describe('upload flow', () => {
     it('should emit upload event with correct request', () => {
       const testFile = new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' });
-      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+      mockApi.uploadAudio = vi.fn().mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
 
       component.onUpload({ file: testFile });
       expect(mockApi.uploadAudio).toHaveBeenCalledWith(testFile, expect.objectContaining({
@@ -102,7 +112,7 @@ describe('HomePage', () => {
 
     it('should set activeJob when upload starts', () => {
       const testFile = new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' });
-      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+      mockApi.uploadAudio = vi.fn().mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
 
       component.onUpload({ file: testFile });
       expect(component.activeJob).not.toBeNull();
@@ -113,7 +123,7 @@ describe('HomePage', () => {
     it('should clear completedStems on new upload', () => {
       component.completedStems = [{ name: 'vocals', displayName: 'Vocals', path: '/vocals.mp3', sizeBytes: 1000 }];
       const testFile = new File(['dummy'], 'test2.mp3', { type: 'audio/mpeg' });
-      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-456', message: 'Queued' } as UploadResponse));
+      mockApi.uploadAudio = vi.fn().mockReturnValue(of({ jobId: 'job-456', message: 'Queued' } as UploadResponse));
 
       component.onUpload({ file: testFile });
       expect(component.completedStems).toEqual([]);
@@ -122,36 +132,39 @@ describe('HomePage', () => {
 
   describe('job polling', () => {
     it('should poll job status after upload', async () => {
-      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
-      vi.spyOn(mockApi, 'getJob').mockReturnValue(of({
+      mockApi.uploadAudio = vi.fn().mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+
+      getJob$.next({
         id: 'job-123', fileName: 'test.mp3', fileSize: 1000, durationSeconds: null,
         status: 'processing', progress: 50, modelUsed: 'htdemucs', stems: [],
         createdAt: new Date().toISOString(),
-      } as Job));
+      } as Job);
 
       component.onUpload({ file: new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' }) });
-      await mockApi.getJob('job-123').toPromise();
+      await new Promise(r => setTimeout(r, 50));
       expect(mockApi.getJob).toHaveBeenCalledWith('job-123');
     });
 
     it('should handle failed job', async () => {
-      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
-      vi.spyOn(mockApi, 'getJob').mockReturnValue(of({
+      mockApi.uploadAudio = vi.fn().mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+
+      getJob$.next({
         id: 'job-123', fileName: 'test.mp3', fileSize: 1000, durationSeconds: null,
         status: 'failed', progress: 0, modelUsed: 'htdemucs', stems: [],
         error: 'GPU out of memory', createdAt: new Date().toISOString(),
-      } as Job));
+      } as Job);
 
       component.onUpload({ file: new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' }) });
-      await mockApi.getJob('job-123').toPromise();
+      await new Promise(r => setTimeout(r, 50));
       expect(component.activeJob!.status).toBe('failed');
     });
   });
 
   describe('completion handling', () => {
     it('should populate completedStems on completion', async () => {
-      vi.spyOn(mockApi, 'uploadAudio').mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
-      vi.spyOn(mockApi, 'getJob').mockReturnValue(of({
+      mockApi.uploadAudio = vi.fn().mockReturnValue(of({ jobId: 'job-123', message: 'Queued' } as UploadResponse));
+
+      getJob$.next({
         id: 'job-123', fileName: 'test.mp3', fileSize: 1000, durationSeconds: null,
         status: 'completed', progress: 100, modelUsed: 'htdemucs',
         stems: [
@@ -159,10 +172,10 @@ describe('HomePage', () => {
           { name: 'drums', displayName: 'Drums', path: '/drums.mp3', sizeBytes: 4000 },
         ],
         createdAt: new Date().toISOString(),
-      } as Job));
+      } as Job);
 
       component.onUpload({ file: new File(['dummy'], 'test.mp3', { type: 'audio/mpeg' }) });
-      await mockApi.getJob('job-123').toPromise();
+      await new Promise(r => setTimeout(r, 50));
       expect(component.completedStems.length).toBe(2);
       expect(component.completedStems[0].name).toBe('vocals');
     });
@@ -180,8 +193,8 @@ describe('HomePage', () => {
     });
 
     it('should set model name', () => {
-      component.setModelName('mdxdemucs');
-      expect(component.modelName).toBe('mdxdemucs');
+      component.setModelName('mdx');
+      expect(component.modelName).toBe('mdx');
     });
 
     it('should set output format', () => {
@@ -199,7 +212,7 @@ describe('HomePage', () => {
 
     it('should open download URL for stem', () => {
       component.activeJob = { jobId: 'job-123', fileName: 'test.mp3', status: 'completed', progress: 100 };
-      vi.spyOn(mockApi, 'getStemUrl').mockReturnValue('/api/stems/job-123/vocals');
+      mockApi.getStemUrl = vi.fn().mockReturnValue('/api/stems/job-123/vocals');
       vi.spyOn(window, 'open').mockImplementation(() => null);
       component.onStemDownload('vocals');
       expect(window.open).toHaveBeenCalledWith('/api/stems/job-123/vocals', '_blank');

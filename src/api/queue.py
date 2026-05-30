@@ -223,7 +223,10 @@ class JobQueue:
             self._save_job_to_disk(job)
             print(f"[Job {job_id}] Completed: {len(result['stems'])} stems")
 
-        except Exception as exc:
+        except BaseException as exc:
+            # SystemExit (from demucs' sys.exit()) inherits from BaseException,
+            # not Exception. Catch it here so the job gets marked as failed
+            # and the queue drains properly instead of leaking a task exception.
             job.status = "failed"
             job.error = str(exc)
             job.completed_at = datetime.now(timezone.utc)

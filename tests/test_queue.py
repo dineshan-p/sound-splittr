@@ -107,6 +107,28 @@ class TestJobQueue:
                 assert job.status == "processing"
 
     @pytest.mark.asyncio
+    async def test_run_job_catches_systemexit(self, queue, tmp_path):
+        """_run_job should catch SystemExit (from demucs' sys.exit) and mark job failed.
+
+        Demucs calls sys.exit(1) when it can't load a file. sys.exit() raises
+        SystemExit which inherits from BaseException, not Exception, so the
+        except block must catch BaseException to avoid leaking task exceptions.
+        """
+        job = _make_job(tmp_path)
+        queue.jobs[job.id] = job
+        queue.active_count = 1
+
+        with patch("src.api.queue.get_gpu_memory_info", return_value={"free_gb": 5.0}):
+            with patch("src.pipeline.process.process_audio_file", side_effect=SystemExit(1)):
+                await queue._run_job(job.id)
+
+        assert job.status == "failed"
+        assert job.error is not None
+        assert job.error == "1"  # str(SystemExit(1)) == "1"
+        assert job.completed_at is not None
+        assert queue.active_count == 0
+
+    @pytest.mark.asyncio
     async def test_add_job_queues_when_full(self, queue, tmp_path):
         """Job should be queued if max concurrent reached."""
         queue.active_count = 2  # MAX_CONCURRENT

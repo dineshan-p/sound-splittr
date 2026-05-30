@@ -61,7 +61,7 @@ def show_gpu_status() -> None:
 @click.option("--output", "-o", "output_dir", required=True,
               help="Directory to save separated stems")
 @click.option("--model", "-m", default="htdemucs",
-              type=click.Choice(["htdemucs", "mdxdemucs", "htdemucs_6s"], case_sensitive=False),
+              type=click.Choice(["htdemucs", "mdx", "htdemucs_6s"], case_sensitive=False),
               help="Demucs model name (default: htdemucs)")
 @click.option("--device", "-d", default="auto",
               type=click.Choice(["auto", "cuda", "cpu"], case_sensitive=False),
