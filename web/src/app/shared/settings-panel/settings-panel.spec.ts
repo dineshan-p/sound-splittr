@@ -6,7 +6,7 @@
  */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { vi } from 'vitest';
+import { Mock, vi } from 'vitest';
 
 import { SettingsPanelComponent } from './settings-panel';
 import { SettingsService } from '../../core/services/settings.service';
@@ -15,8 +15,8 @@ import { NotificationService } from '../../core/services/notification.service';
 describe('SettingsPanelComponent', () => {
   let fixture: ComponentFixture<SettingsPanelComponent>;
   let component: SettingsPanelComponent;
-  let mockPatch: ReturnType<typeof vi.fn>;
-  let mockReset: ReturnType<typeof vi.fn>;
+  let mockPatch: Mock;
+  let mockReset: Mock;
 
   beforeEach(() => {
     mockPatch = vi.fn();
