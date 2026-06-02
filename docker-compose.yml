@@ -1,0 +1,54 @@
+# Sound Splittr — Docker Compose
+#
+# Usage:
+#   docker compose up --build          # Start everything
+#   docker compose up --build -d       # Start in detached mode
+#   docker compose down                # Stop and remove containers
+#   docker compose logs -f backend     # Follow backend logs
+#   docker compose logs -f frontend    # Follow frontend/nginx logs
+#
+# Ports:
+#   Frontend (Angular + nginx) → http://localhost:80
+#   Backend (FastAPI)          → http://localhost:8000 (direct, not recommended)
+#
+# GPU support:
+#   Uncomment the `deploy` section in the backend service to enable GPU.
+#   Requires NVIDIA Container Toolkit installed on the host.
+#   See: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sound-splittr-backend
+    volumes:
+      # Bind-mount host directories so stems and uploads are accessible on the host.
+      - ./uploads:/app/uploads
+      - ./jobs:/app/jobs
+      # Bind-mount config so changes take effect without rebuilding.
+      - ./config:/app/config:ro
+    expose:
+      - "8000"
+    environment:
+      - DEVICE=auto
+    restart: unless-stopped
+    # GPU support — uncomment when needed:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: sound-splittr-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
