@@ -1,19 +1,4 @@
-"""
-Quality Metrics
-===============
-
-Module for evaluating stem separation quality after processing.
-
-Why quality matters:
-- Not all songs separate equally well (depends on genre, production style)
-- Different models perform differently across genres
-- Helps identify files that may need manual adjustment
-
-Metrics we measure:
-- Reconstruction error – how well stems sum back to the original
-- Spectral flatness    – higher values suggest more artefacts
-- Frequency balance    – each stem should occupy its expected bands
-"""
+"""Quality metrics for evaluating stem separation."""
 
 from __future__ import annotations
 
@@ -50,17 +35,7 @@ def compute_reconstruction_error(
 
 
 def analyze_artifacts(audio_dict: dict[str, np.ndarray]) -> dict[str, dict]:
-    """Analyse artefact levels in each stem using spectral flatness.
-
-    Spectral flatness measures how "noise-like" a signal is. Highly noise-like
-    spectra often indicate modelling artefacts from the neural network.
-
-    Args:
-        audio_dict: Mapping of stem name → mono numpy array.
-
-    Returns:
-        Per-stem dict with ``'level'`` (float) and ``'severity'`` ('low'|'medium'|'high').
-    """
+    """Analyse artefact levels in each stem using spectral flatness."""
     results = {}
 
     try:
@@ -70,7 +45,6 @@ def analyze_artifacts(audio_dict: dict[str, np.ndarray]) -> dict[str, dict]:
             if audio is None or np.size(audio) == 0:
                 continue
 
-            # Compute power spectral density via Welch's method
             nperseg = min(2048, len(audio))
             freqs, psd = sp_signal.welch(audio, fs=22050, nperseg=nperseg)
 
@@ -84,7 +58,6 @@ def analyze_artifacts(audio_dict: dict[str, np.ndarray]) -> dict[str, dict]:
             results[name] = {"level": round(flatness, 2), "severity": severity}
 
     except ImportError:
-        # scipy not available – skip detailed analysis
         for name in audio_dict:
             results[name] = {"level": None, "severity": "unknown"}
 
@@ -92,25 +65,13 @@ def analyze_artifacts(audio_dict: dict[str, np.ndarray]) -> dict[str, dict]:
 
 
 def check_frequency_balance(stems: dict[str, np.ndarray]) -> dict[str, dict]:
-    """Quick frequency-band balance check per stem.
-
-    Compares RMS energy in the low band (0–250 Hz) vs the full signal to see if
-    each stem occupies its expected spectral territory.
-
-    Args:
-        stems: Mapping of stem name → numpy array.
-
-    Returns:
-        Per-stem dict with ``'low_freq_rms'`` and ``'status'`` ('ok'|'quiet').
-    """
+    """Quick frequency-band balance check per stem."""
     balance = {}
     for name, audio in stems.items():
         if audio is None or np.size(audio) == 0:
             continue
 
         rms = float(np.sqrt(np.mean(audio ** 2)))
-        # Very rough low-frequency estimate – just look at absolute values near zero crossings
-        # A proper FFT-based analysis would be more accurate but this is a quick heuristic.
         balance[name] = {
             "low_freq_rms": round(rms, 6),
             "status": "ok" if rms > 0.01 else "quiet",
@@ -122,14 +83,10 @@ def check_frequency_balance(stems: dict[str, np.ndarray]) -> dict[str, dict]:
 def calculate_quality_score(metrics: dict) -> float:
     """Calculate an overall quality score from 0–100.
 
-    Combines reconstruction error and artefact levels into a single metric
-    useful for UI display or automated model comparison.
-
-    Args:
-        metrics: Dict produced by ``compute_reconstruction_error`` + ``analyze_artifacts``.
-
-    Returns:
-        Quality score in range [0, 100]. Higher is better.
+    This is a custom heuristic, not a standard metric. The formula weights
+    reconstruction error heavily (10×) and penalizes spectral artifacts
+    (5×). Treat the output as a relative comparison tool, not an absolute
+    quality measure.
     """
     try:
         reconstruction = metrics.get("reconstruction_error", 100)
@@ -149,15 +106,7 @@ def calculate_quality_score(metrics: dict) -> float:
 
 
 def validate_stem_integrity(stem_name: str, stem_path: str) -> bool:
-    """Validate that a saved stem file is readable and non-empty.
-
-    Args:
-        stem_name: Name of the stem for logging purposes.
-        stem_path: Path to the stem file on disk.
-
-    Returns:
-        ``True`` if the file exists, has content, and can be decoded by soundfile.
-    """
+    """Validate that a saved stem file is readable and non-empty."""
     import os as _os
 
     try:
@@ -166,13 +115,12 @@ def validate_stem_integrity(stem_name: str, stem_path: str) -> bool:
         size = _os.path.getsize(stem_path)
         if size == 0:
             return False
-        # Try reading a small chunk to verify decodeability
         with open(stem_path, "rb") as f:
             header = f.read(128)
         import soundfile as sf
         from io import BytesIO
 
-        sf.read(BytesIO(header))  # will raise if not valid audio
+        sf.read(BytesIO(header))
         return True
     except Exception:
         return False

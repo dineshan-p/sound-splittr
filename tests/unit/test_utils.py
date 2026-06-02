@@ -63,18 +63,14 @@ class TestNormalizeAudioPath:
 class TestGetAvailableModels:
     """Tests for the get_available_models utility."""
 
-    def test_returns_list_of_strings(self):
+    def test_returns_dict_with_metadata(self):
         from src.utils import get_available_models
 
         models = get_available_models()
-        assert isinstance(models, list), "Must return a list"
-        assert all(isinstance(m, str) for m in models), "All items must be strings"
-
-    def test_contains_default_model(self):
-        from src.utils import get_available_models
-
-        models = get_available_models()
-        assert "htdemucs" in models
+        assert isinstance(models, dict), "Must return a dict of model metadata"
+        assert "htdemucs" in models, "Default model htdemucs should be listed"
+        assert "description" in models["htdemucs"], "Each model should have a description"
+        assert "stem_count" in models["htdemucs"], "Each model should have a stem_count"
 
 
 class TestGetStemOutputNames:

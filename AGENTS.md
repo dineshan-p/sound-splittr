@@ -1,377 +1,312 @@
-AGENTS.md
+# AGENTS.md — Sound Splittr
 
-An audio stem splitter application using Demucs for DJing. This project enables DJs to create custom versions of their songs with separated stems (vocals, drums, bass, melody) for live remixing and performance.
-
----
-
-## Important: Learning This Together
-
-Since you're new to stem splitters, our goal is to build and understand the tool together:
-
-- **Explain code**: Agents will explain key code sections as we build them
-- **Good comments**: All code should have clear, educational comments
-- **Step-by-step**: We'll progress in phases so you learn as we build
-- **No jargon without explanation**: Technical terms get explained when they appear
+Audio stem splitter for DJs using Demucs AI. Separates vocals, drums, bass, and other into individual stems for live remixing and mashups.
 
 ---
 
-## Roles
+## How to Work On This Project
 
-### 1. Project Architect [@architect] - "The Guide"
-
-- **Responsibilities**: Oversee project design, coordinate agent work, explain concepts
-- **Tasks**:
-  - Design overall system architecture with you in mind
-  - Explain why we're making certain design choices
-  - Simplify technical concepts for better understanding
-  - Coordinate cross-agent collaboration
-  - Review all code for clarity and educational value
-
-### 2. Audio Engineer [@audio_engineer] - "The Sound Expert"
-
-- **Responsibilities**: Handle all audio processing, demucs integration, quality assurance
-- **Tasks**:
-  - Integrate Demucs library and configure models
-  - Explain audio concepts (samples, channels, bit depth)
-  - Optimize audio processing pipeline for quality
-  - Post-processing for stem quality enhancement
-  - Test separation quality across different song genres
-  - **Always comment why we process audio this way**
-
-### 3. Backend Developer [@backend] - "The Pipeline Builder"
-
-- **Responsibilities**: Implement core services, API endpoints, file management
-- **Tasks**:
-  - Build file upload/download handlers with clear explanations
-  - Implement queue system for batch processing
-  - Create API endpoints with documentation
-  - Manage metadata extraction (BPFID3, tags)
-  - Implement caching for audio models
-  - **Comment on file formats and why we use them**
-
-### 4. Frontend/CLI Developer [@frontend] - "The Interface Designer"
-
-- **Responsibilities**: Build intuitive user interfaces (web or CLI)
-- **Tasks**:
-  - Maintain and improve the Click-based CLI tool
-  - Plan Angular web interface for drag-and-drop uploads
-  - Design REST API endpoints for future frontend consumption
-  - Show processing status in real-time with explanations
-
-### 5. QA Tester [@qa] - "The Quality Checker"
-
-- **Responsibilities**: Test audio quality, edge cases, error handling
-- **Tasks**:
-  - Create test suite with diverse audio samples across genres
-  - Test memory usage and processing speed
-  - Validate stem separation quality
-  - Document known limitations and issues
-  - Create "how to fix" guides with explanations
-  - **Test that everything is beginner-friendly**
-
-### 6. Documentation Specialist [@docs] - "The Teacher"
-
-- **Responsibilities**: Create tutorials, guides, explain code
-- **Tasks**:
-  - Write installation guide with "why" explanations
-  - Create "first use" tutorial for beginners
-  - Add inline code comments and docstrings
-  - Maintain code examples for learning
-  - Document API with examples
-  - Create FAQ with gentle troubleshooting
-  - **All docs should be beginner-appropriate**
-
-### 7. Deployment Engineer [@deploy] - "The Container Maker"
-
-- **Responsibilities**: Dockerize, production setup, deployment
-- **Tasks**:
-  - Create simple Dockerfile with explanations
-  - Set up Docker Compose for local development
-  - Write deployment guides with step-by-step instructions
-  - Configure production server with beginner instructions
-  - Explain each deployment decision
+- **Explain before writing**: Summarize what you plan to change and why, then proceed.
+- **Self-documenting code**: Docstrings explain *what* and *why*, not just *how*. Comments explain non-obvious trade-offs.
+- **Type safety everywhere**: Python uses type hints; TypeScript uses strict interfaces. Never use `any`.
+- **Changes are small and focused**: One feature, one fix, one refactor at a time.
+- **Always run tests**: After any code change, run the relevant test suite. If tests break, fix them.
+- **No unexplained jargon**: Technical terms get a brief definition on first use.
 
 ---
 
-## Communication Style
+## Testing Conventions
 
-### For the Architect
+### Python Tests (pytest)
 
-- Always explain technical decisions in simple terms
-- When introducing a concept, use an analogy
-- Check understanding between major milestones
-
-### For Audio Engineer
-
-- Never assume knowledge of audio concepts
-- Always comment WHY we do something, not just HOW
-- Use audio metaphors ("
-
-### For Documentation
-
-- Start with "What this is" before "How it works"
-- Always include "Why this matters"
-- Keep examples beginner-friendly
-
----
-
-## Code Commentary Standards
-
-All code must follow these principles:
-
-### DO: Include comments
-
-```python
-# Extract stems from multi-track audio audio_file
-# Returns a dictionary with tracks separated into different stems
-with open(audio_file) as f:
-    # Process audio
-
-def process_audio(audio):
-    """Main function to process audio.
-    Uses Demucs model to separate vocals, drums, bass, melody."""
-    # ... implementation with comments
+```bash
+pytest tests/ -v --tb=short          # All tests
+pytest tests/unit/ -v                 # Unit tests only (fast, no I/O)
+pytest tests/integration/ -v          # Integration tests
+pytest tests/test_edge_cases.py -v    # Edge case / error handling tests
+pytest tests/test_server.py -v        # API endpoint tests
+pytest tests/ -k "error or empty or invalid"  # Error-path filter
 ```
 
-### FORGIVE: Occasional questions
+**Rules:**
+- Tests live in `tests/` alongside the source code they test.
+- Each module has a `test_<module>.py` file.
+- Edge cases go in `test_edge_cases.py` — empty inputs, timeouts, invalid values, boundary conditions, silent data.
+- Use `src/` imports directly (project root is on `sys.path`).
+- Mock external services (GPU, file system) — never hit real hardware in tests.
+- Async tests use `pytest.mark.asyncio` (configured in `pytest.ini`).
+- Fixtures live in `tests/conftest.py`. Synthetic audio files are generated by `tests/fixtures/generate.py`.
+- Aim for high coverage on error paths — the "happy path" is the easy part.
 
-- It's OK to ask for code explanations
-- It's OK to say "I don't understand this part"
-- Agents should explain any confusing section
+### Angular Tests (Vitest)
 
-### AVOID: Bare functions without docstrings
-
+```bash
+cd web && ng test                     # All Angular unit tests
+cd web && ng test --include=**/api.service.spec.ts   # Single file
+cd web && ng lint                     # Lint TypeScript and SCSS
 ```
-# BAD
 
-def load_audio(file):
-    return torchaudio.load(file)
-
-# GOOD
-def load_audio(file):
-    """Load audio file into torch tensor format.
-
-    Args:
-        file: Path to audio file
-
-    Returns:
-        Tensor with audio data
-		"""
-    # Load the audio
-    return torchaudio.load(file)
-```
+**Rules:**
+- Every component, service, and page has a `.spec.ts` file.
+- Use `TestBed` for component tests, `HttpClientTestingModule` for service tests.
+- Mock the backend API — never hit a real server in tests.
+- Test error states, empty responses, and edge cases (not just success).
+- Maintain 70%+ coverage on statements, functions, and lines.
 
 ---
 
-## Workflow Phases
+## Code Standards
 
-### Phase 1: Foundation (Weeks 1-2)
+### Python
 
-**Goal**: Basic splitter that works end-to-end
+- **Docstrings**: Every public function has a docstring with `Args:`, `Returns:`, `Raises:` (when applicable).
+- **Type hints**: All function signatures use type hints. Use `from __future__ import annotations` for forward references.
+- **Error handling**: Catch specific exceptions. Never use bare `except:`.
+- **No mutable default arguments**: Use `None` and check inside the function.
+- **Imports**: Grouped — stdlib, third-party, local. Sorted alphabetically within groups.
 
-1. **Setup** (Architect leads)
-   - Initialize Python project
-   - Install dependencies
-   - Create basic directory structure
-   - Explain each file's purpose
+### TypeScript / Angular
 
-2. **Audio Core** (Audio Engineer + Backend + Architect)
-   - Integrate Demucs
-   - Basic file input/output
-   - Simple processing pipeline
-   - Comment every audio operation
+- **Strict mode**: No `any` types. Use proper interfaces from `core/models/index.ts`.
+- **Signals over observables**: Use Angular signals (`signal()`, `computed()`, `effect()`) for state management.
+- **Standalone components**: All components use `standalone: true` with `imports` array.
+- **Services are injectable**: Use `inject()` in constructors. Services are `providedIn: 'root'`.
+- **Component structure**: Inputs/outputs use `input()` / `output()` signal APIs (Angular 21+).
+- **HTTP client**: All API calls go through `ApiService` — never use `HttpClient` directly in components.
+- **SCSS**: Use CSS custom properties from `:root` for theming. No hardcoded colors in components.
 
-3. **CLI Interface** (Frontend + Backend)
-   - Click-based command-line tool with progress output
-   - Dry-run mode for validation before processing
-   - GPU status detection and reporting
+### General
 
-**End Goal**: Upload song → Get stems in 5 minutes → Download all stems
-
-### Phase 2: Quality & Testing (Weeks 3-4)
-
-**Goal**: Reliable, high-quality output
-
-1. **Test Suite** (QA + Audio Engineer)
-   - Create diverse test files (rock, pop, electronic, jazz)
-   - Measure quality metrics
-   - Test with different file sizes/formats
-   - Document expected quality per genre
-
-2. **Optimization** (Audio Engineer + Backend)
-   - Batch processing improvements
-   - Memory management
-   - GPU vs CPU handling
-   - Caching strategies
-
-**End Goal**: Process any audio file reliably with good quality
-
-### Phase 3: Polish & Documentation (Weeks 5-6)
-
-**Goal**: Production-ready, easy to use
-
-1. **User Guides** (Docs + Frontend)
-   - "First Time Use" guide
-   - "Understanding Your Stems" tutorial
-   - "Best Practices" guide
-   - FAQ and troubleshooting
-
-2. **Code Polish** (Architect + All)
-   - Final code review
-   - Add missing comments
-   - Fix bugs from testing
-   - Performance improvements
-
-3. **Deployment** (Deploy + Architect)
-   - Docker images
-   - Cloud deployment options
-   - Local installation instructions
-
-### Phase 4: Maintenance & Enhancement (Ongoing)
-
-**Goal**: Keep improving
-
-- Monitor usage and collect feedback
-- Add new features as needed
-- Update for new Demucs versions
-- Expand genre coverage
+- **Naming**: snake_case for Python, camelCase for TypeScript, kebab-case for file names and CSS classes.
+- **No magic numbers**: Extract constants with descriptive names.
+- **Single responsibility**: One file, one main concern. Split if a file grows beyond ~300 lines.
 
 ---
 
-## Technical Stack (Beginner-friendly)
+## Configuration
 
-### Core Dependencies
+### `config/config.yaml`
 
-- **Python 3.10+**: Easy to learn, lots of resources
-- **demucs**: Audio separation (handles the hard work)
-- **scipy**: Audio resampling & spectral analysis
-- **click**: CLI framework (command-line interface)
+Pipeline defaults. The backend reads this at startup.
 
-### Why These?
+```yaml
+model:
+  name: htdemucs           # htdemucs | mdx | htdemucs_6s
+  device: auto             # auto | cuda | cpu
+  gpu_mem_frac: 0.5        # Fraction of GPU memory to reserve
 
-- Python is great for beginners - lots of tutorials
-- Demucs handles the complex audio AI stuff
-- Click provides a robust, well-documented CLI
+output:
+  format: mp3              # mp3 | wav | flac
+  bitrate: 320             # kbps (only for mp3)
+  stems: [vocals, drums, bass, other]
 
-### Optional / Planned Stack
+preprocessing:
+  normalize: true
+  min_amplitude: 0.001
+  denoise: false
 
-- **FastAPI**: For REST API endpoints (backend for Angular)
-- **Angular**: Web frontend (planned, replacing Streamlit)
-- **Docker**: For consistent environments
+quality:
+  level: 1                 # 0 = fastest, 3 = highest quality
+```
+
+**Rules:**
+- Do not hardcode config values in code. Read from this file or pass as CLI/API parameters.
+- New config keys must be documented in this file and in `README.md`.
+
+### `pytest.ini`
+
+pytest settings: async mode auto, test paths, file patterns. Do not modify without understanding the async queue test requirements.
+
+### `web/vitest.config.ts`
+
+Vitest settings: jsdom environment, coverage thresholds (70%), excluded files.
 
 ---
 
 ## Project Structure
 
 ```
-stem_splitter/
-├── README.md                 # Main guide with explanations
-├── requirements.txt          # Python dependencies
-├── AGENTS.md                 # This file
-├── AGENT_CHECKLIST.md        # Per-phase tasks
+sound-splittr/
+├── src/                          # Python backend
+│   ├── api/
+│   │   ├── server.py             # FastAPI REST endpoints (upload, jobs, stems, models, health)
+│   │   └── queue.py              # Job queue with GPU fallback, JSON persistence
+│   ├── core/
+│   │   ├── demucs_helper.py      # Model discovery, metadata, loading
+│   │   └── audio_io.py           # Load/save audio (soundfile + pydub)
+│   ├── pipeline/
+│   │   └── process.py            # Core splitting pipeline (model loading, separation)
+│   ├── cli/
+│   │   └── main.py               # Click-based CLI tool
+│   └── utils/
+│       └── quality.py            # Separation quality metrics
 │
-├── src/                      # Main Python code
-│   ├── __init__.py
-│   ├── core/                 # Core audio processing
-│   │   ├── __init__.py
-│   │   ├── demucs_helper.py  # Demucs integration (heavily commented)
-│   │   └── audio_io.py       # File I/O with soundfile/pydub (explained)
-│   ├── pipeline/             # Processing pipeline
-│   │   ├── __init__.py
-│   │   └── process.py        # Main processing function
-│   ├── cli/                  # CLI interface (Click-based)
-│   │   └── main.py           # Command line interface
-│   └── utils/                # Utilities
-│       ├── __init__.py       # Common helpers (format_duration, file size)
-│       └── quality.py        # Quality metrics
+├── web/                          # Angular 21 frontend
+│   ├── proxy.conf.json           # Dev proxy: /api/* → localhost:8000
+│   ├── vitest.config.ts          # Vitest + coverage config
+│   └── src/app/
+│       ├── app.ts                # Shell component (nav bar, router outlet)
+│       ├── app.routes.ts         # Route definitions (/ → home, /jobs, /settings)
+│       ├── app.config.ts         # Providers (HTTP client, router)
+│       ├── core/
+│       │   ├── models/index.ts   # All TypeScript interfaces (Job, StemInfo, etc.)
+│       │   └── services/
+│       │       ├── api.service.ts       # HTTP client — single source for API calls
+│       │       ├── settings.service.ts  # localStorage persistence for user prefs
+│       │       └── notification.service.ts  # Toast notifications
+│       ├── pages/
+│       │   ├── home-page/         # Landing: upload, GPU status, stem display
+│       │   ├── jobs-page/         # Job history: list, status badges, download
+│       │   └── settings-page/     # Config: API URL, model, format, bitrate
+│       └── shared/
+│           ├── upload-area/       # Drag-and-drop zone with validation
+│           ├── processing-status/ # Circular progress ring with stage labels
+│           ├── stem-player/       # Per-stem audio player (play/pause, seek, volume, mute/solo)
+│           ├── stem-list/         # Grid of StemPlayer components
+│           ├── settings-panel/    # Form for API/model/format/bitrate
+│           └── notification-toast/ # Toast display component
 │
-├── app/                      # Demucs models cache
-│   └── models/
+├── tests/                        # Python test suite (115 tests)
+│   ├── conftest.py               # Shared fixtures, sys.path setup
+│   ├── fixtures/
+│   │   └── generate.py           # Synthetic audio generators for tests
+│   ├── integration/
+│   │   └── test_integration.py   # Full pipeline audio I/O roundtrip
+│   ├── unit/
+│   │   ├── test_core.py          # Demucs helper, audio I/O
+│   │   ├── test_pipeline.py      # Pipeline module structure
+│   │   └── test_utils.py         # Quality metrics, helpers
+│   ├── test_server.py            # API endpoint tests
+│   ├── test_queue.py             # Job queue CRUD, GPU gating, persistence
+│   ├── test_cli.py               # CLI input validation, dry-run, help
+│   ├── test_audio_io.py          # Audio loading, saving, normalization
+│   ├── test_demucs_helper.py     # Model metadata, loading
+│   └── test_edge_cases.py        # Error handling, empty inputs, timeouts
 │
-├── web/                      # Static web files (if needed)
-│
-├── tests/                    # Test suite
-│   ├── __init__.py
-│   ├── test_audio.py
-│   ├── test_demes.py
-│   └── fixtures/             # Test audio files
-│
-├── config/                   # Configuration files
-│   ├── models.json           # Model configuration
-│   └── presets.yaml          # Audio presets
-│
-├── docs/                     # Documentation
-│   ├── tutorial/             # Step-by-step tutorials
-│   ├── api/                  # API documentation
-│   └── faq/                  # FAQ with explanations
-│
-├── docker/                   # Docker files
-│   ├── Dockerfile
-│   └── docker-compose.yml
-│
-└── logs/                     # Application logs
+├── config/
+│   └── config.yaml               # Pipeline defaults (model, output, quality)
+├── docs/                         # Additional documentation
+├── pytest.ini                    # pytest configuration
+├── requirements.txt              # Python dependencies
+├── .gitignore                    # Ignored files (runtime data, node_modules, etc.)
+├── README.md                     # User-facing documentation
+├── PRODUCT.md                    # Product vision
+├── DESIGN.md                     # Design tokens and rules
+└── AGENTS.md                     # This file
 ```
 
-### Key File Explanations
+---
 
-#### README.md
+## Key Files
 
-**What**: Main user guide  
-**Why**: First thing users read  
-**Contents**: Installation, usage examples, troubleshooting  
-**Style**: Conversational, assumes no prior knowledge
-
-#### src/cli/main.py
-
-**What**: Click-based CLI tool
-**Why**: Primary user interface for splitting audio files from terminal
-**Features**: GPU detection, dry-run mode, verbose output, format/bitrate options
-
-
-
-#### requirements.txt
-
-**What**: Python package dependencies  
-**Why**: Ensures everyone has same setup  
-**Style**: Well-commented dependencies
+| File | Purpose |
+|------|---------|
+| `src/cli/main.py` | CLI entry point — GPU detection, dry-run, format/bitrate options |
+| `src/api/server.py` | FastAPI REST API — upload, jobs, stems, models, health endpoints |
+| `src/api/queue.py` | Job queue — GPU memory gating, concurrency limits, JSON persistence |
+| `src/pipeline/process.py` | Core pipeline — model loading, stem separation, file output |
+| `src/core/audio_io.py` | Audio I/O — load/save WAV/MP3/FLAC, normalization, clipping detection |
+| `src/core/demucs_helper.py` | Model discovery — available models, metadata, device selection |
+| `src/utils/quality.py` | Quality metrics — separation quality scoring |
+| `web/src/app/core/services/api.service.ts` | Angular HTTP client — single source for all backend API calls |
+| `web/src/app/core/models/index.ts` | TypeScript interfaces — Job, StemInfo, AppSettings, ModelOption |
+| `web/src/app/shared/stem-player/stem-player.ts` | Per-stem audio player — play/pause, seek, volume, mute/solo |
+| `web/src/app/shared/upload-area/upload-area.ts` | Drag-and-drop upload zone with file validation |
+| `web/src/app/pages/home-page/home-page.ts` | Landing page — upload, GPU status, settings, stem display |
 
 ---
 
-## Deliverables
+## Workflow Phases
 
-### Minimum Viable Product (Weeks 1-2)
+### Phase 1: Foundation ✅ Complete
 
-- [ ] Upload audio file
-- [ ] Process with Demucs
-- [ ] Download vocal, drums, bass, melody stems
-- [ ] Basic error handling
+- [x] Python project initialized with Demucs integration
+- [x] CLI tool (`src/cli/main.py`) with GPU detection, dry-run mode
+- [x] Processing pipeline (`src/pipeline/process.py`)
+- [x] End-to-end: upload → process → download stems
 
-### Full Version (Weeks 4-6)
+### Phase 2: Web Frontend & Backend API ✅ Complete
 
-- [ ] All MVP features
-- [ ] Quality testing suite
-- [ ] Docker container
-- [ ] Complete documentation
-- [ ] FAQ and tutorials
+- [x] Angular 21 frontend (UploadArea, ProcessingStatus, StemPlayer, StemList)
+- [x] Routing: Home (`/`), Jobs (`/jobs`), Settings (`/settings`)
+- [x] TypeScript interfaces for API contracts
+- [x] FastAPI backend (`src/api/server.py`) with job queue
+- [x] End-to-end: upload via web UI → process → download stems
+- [x] UI polish (accessibility, design tokens, no-pure-white rule)
+
+### Phase 3: Quality & Testing ✅ Complete
+
+- [x] Python test suite (115 tests: unit, integration, edge cases)
+- [x] Angular test suite (60+ tests: services, components, pages)
+- [x] Test fixtures (synthetic audio generators)
+- [x] pytest.ini + vitest.config.ts configured
+- [x] `.gitignore` and `requirements.txt` cleanup
+
+### Phase 4: Production Readiness (Next)
+
+- [ ] Docker container (backend + frontend)
+- [ ] Docker Compose for local dev
+- [ ] CI/CD pipeline
+
+### Phase 5: Maintenance (Ongoing)
+
+- Monitor usage, collect feedback
+- Update for new Demucs versions
+- Expand genre coverage
 
 ---
 
-## Notes for Beginning Development
+## Technical Stack
 
-1. **Start Simple**: First version should just work, not be perfect
-2. **Test Often**: Catch issues early, learn from mistakes
-3. **Learn Together**: This is about learning as we build
-4. **Quality Over Speed**: Audio quality matters for DJing
+| Layer | Technology |
+|-------|-----------|
+| Audio AI | Demucs 4.0+ (PyTorch) |
+| Backend | Python 3.10+, FastAPI, uvicorn, click (CLI) |
+| Frontend | Angular 21, TypeScript, SCSS, Vitest |
+| Container | Docker, Docker Compose |
+| Audio I/O | soundfile, pydub |
+| Testing | pytest, pytest-asyncio, Vitest |
 
 ---
 
-## Next Steps
+## Agent-Specific Guidelines
 
-Before we begin:
+### When adding a new feature:
+1. Identify which layer(s) touch (backend API, frontend component, pipeline)
+2. Write tests first (red-green-refactor)
+3. Implement the feature
+4. Run all relevant tests
+5. Update documentation (README, AGENTS.md if structure changes)
 
-1. Review this AGENTS.md and project plan
-2. Discuss what features you care about most
-3. Plan the Angular frontend architecture
-4. Set up development environment together
+### When fixing a bug:
+1. Write a failing test that reproduces the bug
+2. Fix the code
+3. Verify the test passes
+4. Run the full test suite to ensure no regressions
 
-Let me know if you have questions about any section!
+### When refactoring:
+1. Ensure existing tests cover the behavior being changed
+2. Make the change
+3. Run tests — if they pass, the refactor is safe
+4. No test = no refactor (unless you write tests first)
+
+### When adding a new dependency:
+1. Add to `requirements.txt` (Python) or `package.json` (Angular)
+2. Update the relevant README section
+3. Run tests to verify nothing breaks
+
+### When changing the API contract:
+1. Update TypeScript interfaces in `web/src/app/core/models/index.ts`
+2. Update `ApiService` if needed
+3. Update `README.md` API endpoint table
+4. Update or add tests
+
+---
+
+## Notes
+
+- **Start simple**: First version should work, not be perfect. Iterate.
+- **Test error paths**: The happy path is easy. The edge cases are where bugs hide.
+- **Audio quality matters**: This is for DJs — separation quality is the product.
+- **GPU is optional**: The app must work on CPU. Always test with `device="cpu"`.
+- **Config over magic numbers**: If a number appears more than once, it belongs in `config.yaml` or as a constant.

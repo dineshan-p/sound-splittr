@@ -1,0 +1,23 @@
+<div class="stem-list">
+  <div class="list-header">
+    <h3 class="list-title">Stems</h3>
+    <button class="download-all-btn" (click)="onDownloadAll()">
+      Download All ({{ totalSize }})
+    </button>
+  </div>
+
+  <!-- Render each stem as an individual player card -->
+  <div class="stem-grid">
+    @for (playerStem of playerStems; track playerStem.name) {
+    <app-stem-player
+      [stem]="playerStem"
+      (downloaded)="onStemDownload($event)"
+    />
+    }
+  </div>
+
+  <!-- Fallback when no stems yet -->
+  @if (stems().length === 0) {
+  <p class="empty-msg">No stems generated yet. Upload a song to get started!</p>
+  }
+</div>

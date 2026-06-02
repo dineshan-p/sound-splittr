@@ -34,9 +34,11 @@ except Exception as e:
 # Test 3: Demucs helper imports work
 print("\n[Test 3] Testing demucs_helper modules...")
 try:
-    from src.core.demucs_helper import ModelInfo, DemucsEngine
+    from src.core.demucs_helper import ModelInfo, get_available_models, get_model
     print(f"✓ demucs_helper imported successfully")
     print(f"  Available models: {list(ModelInfo.keys())}")
+    print(f"  get_available_models() returns: {type(get_available_models()).__name__}")
+    print(f"  get_model() is callable: {callable(get_model)}")
 except Exception as e:
     print(f"✗ demucs_helper failed: {e}")
     sys.exit(1)
@@ -60,14 +62,14 @@ with tempfile.NamedTemporaryFile(delete=False) as tmp:
     test_size = get_file_size(tmp.name)
 print(f"  get_file_size(temp file) = {test_size} bytes")
 
-# Test 6: Verify engine can be instantiated
-print("\n[Test 6] Testing DemucsEngine instantiation...")
+# Test 6: Verify model loading function works
+print("\n[Test 6] Testing get_model() function...")
 try:
-    # Don't actually load a model, just test initialization code path
+    # Don't actually load a model (it downloads 2-4GB), just verify the function exists
     print("  (Skipping actual model loading to save time)")
-    print("✓ Engine classes are correctly defined")
+    print("✓ get_model() is correctly defined")
 except Exception as e:
-    print(f"✗ Engine test failed: {e}")
+    print(f"✗ Model test failed: {e}")
 
 print("\n" + "=" * 60)
 print("ALL TESTS PASSED!")

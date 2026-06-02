@@ -1,0 +1,161 @@
+<div class="home-page">
+  <!-- Header / Hero -->
+  <header class="hero">
+    <h1 class="title">Sound Splittr</h1>
+    <p class="subtitle">
+      Separate any song into vocals, drums, bass &amp; melody stems using AI
+    </p>
+
+    @if (apiChecked && !apiAvailable && apiUrlConfigured) {
+    <div class="api-warning">
+      Backend API not reachable — check the URL in Settings (top-right). The
+      demo will show the UI but splitting won't work until the API is running.
+    </div>
+    }
+  </header>
+
+  <main class="content">
+    <!-- Left column: Upload area with settings -->
+    <section class="upload-section">
+      <!-- Settings panel (always visible) -->
+      <div class="settings-accordion">
+        <div
+          class="settings-header"
+          role="button"
+          tabindex="0"
+          aria-expanded="false"
+        >
+          Splitting Settings
+        </div>
+        <div class="settings-inline">
+          <label for="home-model" class="inline-label">Model</label>
+          <select
+            id="home-model"
+            #homeModel
+            [value]="modelName"
+            (change)="setModelName(homeModel.value)"
+            class="form-select-sm"
+          >
+            @for (opt of models; track opt.id) {
+            <option [value]="opt.id">{{ opt.label }}</option>
+            }
+          </select>
+
+          <label for="home-format" class="inline-label">Format</label>
+          <select
+            id="home-format"
+            #homeFormat
+            [value]="outputFormat"
+            (change)="setOutputFormat(homeFormat.value)"
+            class="form-select-sm"
+          >
+            <option value="mp3">MP3</option>
+            <option value="wav">WAV</option>
+            <option value="flac">FLAC</option>
+          </select>
+
+          @if (outputFormat === 'mp3') {
+          <label for="home-bitrate" class="inline-label">Bitrate</label>
+          <select
+            id="home-bitrate"
+            [(ngModel)]="bitrate"
+            class="form-select-sm"
+          >
+            <option [ngValue]="128">128k</option>
+            <option [ngValue]="192">192k</option>
+            <option [ngValue]="256">256k</option>
+            <option [ngValue]="320">320k</option>
+          </select>
+          }
+
+          <!-- Model info tooltip -->
+          @if (modelName) {
+          <span class="model-info">
+            {{ models.find(m => m.id === modelName)?.description ?? '' }}
+          </span>
+          }
+        </div>
+      </div>
+
+      <!-- Queue Status -->
+      @if (queueStatus) {
+      <div class="queue-status">
+        <div class="queue-info">
+          <span
+            class="queue-badge"
+            [class.queue-queued]="queueStatus.queue_size > 0"
+            [class.queue-processing]="queueStatus.active_count > 0"
+          >
+            @if (queueStatus.queue_size > 0) { {{ queueStatus.queue_size }} in
+            queue } @else if (queueStatus.active_count > 0) { {{
+            queueStatus.active_count }} processing } @else { Ready }
+          </span>
+          @if (queueStatus.gpu) {
+          <span class="queue-gpu"
+            >GPU: {{ queueStatus.gpu.free_gb }} GB free / {{
+            queueStatus.gpu.total_gb }} GB</span
+          >
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Drop zone -->
+      <app-upload-area (uploaded)="onUpload($event)" />
+
+      <!-- Active job progress -->
+      @if (activeJob) {
+      <app-processing-status [job]="activeJob" class="status-card-inline" />
+      }
+    </section>
+
+    <!-- Right column: Completed stems -->
+    <section class="stems-section">
+      @if (completedStems.length > 0) {
+      <app-stem-list
+        [stems]="completedStems"
+        [downloadBaseUrl]="api.apiUrl.replace(/\/$/, '') + '/api/stems/' + (activeJob?.jobId ?? '')"
+        (downloadAll)="onDownloadAll()"
+        (stemDownloaded)="onStemDownload($event)"
+      />
+      } @else if (!isProcessing()) {
+      <!-- Empty state -->
+      <div class="empty-state">
+        <p class="empty-icon">♪</p>
+        <h3>No stems yet</h3>
+        <p>Drop a song on the left to get started!</p>
+
+        <!-- Feature cards -->
+        <div class="features-grid">
+          <div class="feature-card">
+            <span class="feature-icon">🎤</span>
+            <h4>Vocals</h4>
+            <p>Lead and backing vocals</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">🥁</span>
+            <h4>Drums</h4>
+            <p>Drums and percussion</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">🎸</span>
+            <h4>Bass</h4>
+            <p>Low-end frequencies</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">🎹</span>
+            <h4>Other</h4>
+            <p>Melody and remaining instruments</p>
+          </div>
+        </div>
+      </div>
+      }
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" aria-label="Site footer">
+    <span>Sound Splittr</span>
+    <a routerLink="/settings" class="footer-link">Settings</a>
+  </footer>
+</div>

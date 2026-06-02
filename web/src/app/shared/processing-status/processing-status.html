@@ -1,0 +1,33 @@
+<div class="status-card" [class]="statusClass">
+  <!-- Circular progress ring -->
+  <div class="progress-ring-container">
+    <svg class="progress-ring" viewBox="0 0 120 120">
+      <circle class="ring-bg" cx="60" cy="60" r="52" />
+      <circle
+        class="ring-progress"
+        cx="60"
+        cy="60"
+        r="52"
+        [attr.stroke-dasharray]="327"
+        [attr.stroke-dashoffset]="327 - (327 * job().progress) / 100"
+      />
+    </svg>
+    <span class="progress-text">{{ progressFormatted }}</span>
+  </div>
+
+  <!-- File name and stage -->
+  <h3 class="file-name">{{ job().fileName }}</h3>
+  <p class="stage">{{ stageLabel }}</p>
+
+  <!-- Error message if failed -->
+  @if (job().error) {
+  <div class="error-box"><strong>Error:</strong> {{ job().error }}</div>
+  }
+
+  <!-- Completed: show stem count -->
+  @if (job().status === 'completed') {
+  <p class="complete-msg">
+    Stems are ready — scroll down to listen and download!
+  </p>
+  }
+</div>

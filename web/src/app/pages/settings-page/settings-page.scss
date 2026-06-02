@@ -1,0 +1,50 @@
+/**
+ * Settings Page Styles
+ */
+
+.settings-page {
+  $base: &;
+  padding: 32px;
+  max-width: 700px;
+  margin: 0 auto;
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text, #e2e8f0);
+    }
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-accent, #6c63ff);
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+
+    &:hover { opacity: 0.8; }
+
+    svg {
+      transition: transform 0.15s ease;
+    }
+
+    &:hover svg {
+      transform: translateX(-2px);
+    }
+  }
+
+  .settings-content {
+    // The settings panel component handles its own styling
+  }
+}

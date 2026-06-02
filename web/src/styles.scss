@@ -1,0 +1,124 @@
+/**
+ * Global Styles — Theme Variables + Base Reset
+ * ==============================================
+ *
+ * All components reference CSS custom properties defined here for a
+ * consistent dark theme.  To create a light mode, simply override the
+ * variables on :root with light values.
+ */
+
+/* ─── Color Tokens (Dark Theme) ──────────────────────────────────────── */
+
+:root {
+  // Backgrounds
+  --color-bg: #0f172a;          // main page background (slate-950)
+  --color-bg-subtle: rgba(255, 255, 255, 0.03);   // cards, panels
+  --color-bg-hover: rgba(255, 255, 255, 0.06);    // hover states
+
+  // Text
+  --color-text: #e2e8f0;        // primary text (slate-200)
+  --color-muted: #a0aec0;       // secondary / placeholder text (slate-400)
+
+  // Borders & dividers
+  --color-border: #4a5568;      // borders, dividers (slate-600)
+
+  // Accent — primary interactive color
+  --color-accent: #6c63ff;      // purple-500
+  --color-accent-hover: #7c73ff; // purple-500 hover variant
+
+  // Semantic colors
+  --color-success: #48bb78;     // green-500
+  --color-warning: #ecc94b;     // yellow-400
+  --color-error: #fc8181;       // red-400
+
+  // Typography
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+/* ─── Base Reset & Defaults ───────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+// Make sure all interactive elements look clickable
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+// Remove default button styling where we style manually
+button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-size: inherit;
+}
+
+input[type="range"] {
+  // Ensure consistent range input appearance across browsers
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-border);
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  border: none;
+  cursor: pointer;
+}
+
+// Select dropdowns
+select {
+  color-scheme: dark;
+}
+
+/* ─── Reduced Motion ──────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

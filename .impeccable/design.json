@@ -1,0 +1,271 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-21T00:00:00.000Z",
+  "title": "Design System: Sound Splittr",
+  "extensions": {
+    "colorMeta": {
+      "bg-deep": {
+        "role": "neutral",
+        "displayName": "Deep Slate",
+        "canonical": "oklch(13% 0.015 250)",
+        "tonalRamp": ["#0a0f1e", "#0f172a", "#141e2e", "#1a2332", "#1f2a38", "#252d3b", "#2b3340", "#313a45"]
+      },
+      "bg-subtle": {
+        "role": "neutral",
+        "displayName": "Surface Tint",
+        "canonical": "oklch(13% 0.002)",
+        "tonalRamp": ["rgba(255,255,255,0.01)", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.05)", "rgba(255,255,255,0.08)", "rgba(255,255,255,0.10)", "rgba(255,255,255,0.13)", "rgba(255,255,255,0.16)", "rgba(255,255,255,0.20)"]
+      },
+      "bg-hover": {
+        "role": "neutral",
+        "displayName": "Hover Surface",
+        "canonical": "oklch(15% 0.003)",
+        "tonalRamp": ["rgba(255,255,255,0.04)", "rgba(255,255,255,0.06)", "rgba(255,255,255,0.08)", "rgba(255,255,255,0.10)", "rgba(255,255,255,0.12)", "rgba(255,255,255,0.14)", "rgba(255,255,255,0.16)", "rgba(255,255,255,0.18)"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Primary Text",
+        "canonical": "oklch(85% 0.008 250)",
+        "tonalRamp": ["#1e2535", "#313a4a", "#4a5568", "#6b7a8d", "#8a96a5", "#a0aec0", "#c2ccd8", "#e2e8f0"]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Muted Text",
+        "canonical": "oklch(70% 0.006 250)",
+        "tonalRamp": ["#2a3345", "#3d4858", "#5a6575", "#718096", "#8a96a5", "#a0aec0", "#b8c4d0", "#d0dae5"]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Border",
+        "canonical": "oklch(40% 0.010 250)",
+        "tonalRamp": ["#1a2030", "#2d3545", "#4a5568", "#5f6d80", "#7a8898", "#919eab", "#a8b4c0", "#c0ccd6"]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Electric Violet",
+        "canonical": "oklch(65% 0.22 295)",
+        "tonalRamp": ["#2a2060", "#3d2d80", "#503aa0", "#6347c0", "#6c63ff", "#857cff", "#9d95ff", "#b5adff"]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Vivid Violet",
+        "canonical": "oklch(68% 0.22 295)",
+        "tonalRamp": ["#302570", "#453390", "#5a40b0", "#6f4dd0", "#7c73ff", "#9590ff", "#adaaff", "#c5c3ff"]
+      },
+      "success": {
+        "role": "semantic",
+        "displayName": "Success",
+        "canonical": "oklch(68% 0.18 155)",
+        "tonalRamp": ["#1a4a2a", "#256b3b", "#309048", "#3ab058", "#48bb78", "#62d090", "#80e0a8", "#a0f0c0"]
+      },
+      "warning": {
+        "role": "semantic",
+        "displayName": "Warning",
+        "canonical": "oklch(75% 0.18 85)",
+        "tonalRamp": ["#4a4010", "#7a6a18", "#aa9020", "#d0b030", "#ecc94b", "#f0d870", "#f5e898", "#faf5c0"]
+      },
+      "error": {
+        "role": "semantic",
+        "displayName": "Error",
+        "canonical": "oklch(68% 0.20 20)",
+        "tonalRamp": ["#4a1a1a", "#7a2a2a", "#aa3a3a", "#d05050", "#fc8181", "#f5a0a0", "#f5b8b8", "#f5d0d0"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero title on home page only. Tight tracking for confident presence."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles (Jobs, Settings). Bold but not heavy."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headers, stem list titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Descriptions, instructions, help text. Comfortable reading at 65-75ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Mono font for status badges, form labels, technical metadata. Uppercase with letter-spacing."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Technical data in prose context — file names, model names, bitrates."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing for state transitions. No bounce, no elastic."
+      },
+      {
+        "name": "ease-out-quick",
+        "value": "0.15s ease-out",
+        "purpose": "Quick transitions for hover states (buttons, nav links)."
+      },
+      {
+        "name": "ease-out-standard",
+        "value": "0.2s ease-out",
+        "purpose": "Standard transitions for interactive feedback (upload zone, cards)."
+      },
+      {
+        "name": "ease-out-slow",
+        "value": "0.4s ease-out",
+        "purpose": "Slow transitions for progress indicators and state changes."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1400px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Accent-colored primary action button with mono label. Used for upload, play, download actions.",
+      "html": "<button class=\"ds-btn-primary\">UPLOAD SONG</button>",
+      "css": ".ds-btn-primary { background-color: #6c63ff; color: #fff; padding: 10px 24px; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: filter 0.2s ease, transform 0.1s ease; } .ds-btn-primary:hover { filter: brightness(1.15); } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid #6c63ff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Subtle outlined button for less-emphasis actions like refresh or cancel.",
+      "html": "<button class=\"ds-btn-secondary\">REFRESH</button>",
+      "css": ".ds-btn-secondary { background-color: rgba(255, 255, 255, 0.05); color: #e2e8f0; padding: 8px 16px; border: 1px solid #4a5568; border-radius: 6px; font-size: 0.8rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: background-color 0.15s ease; } .ds-btn-secondary:hover { background-color: rgba(255, 255, 255, 0.1); } .ds-btn-secondary:disabled { opacity: 0.5; cursor: wait; } .ds-btn-secondary:focus-visible { outline: 2px solid #6c63ff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Error-toned button for destructive actions like delete.",
+      "html": "<button class=\"ds-btn-destructive\">DELETE</button>",
+      "css": ".ds-btn-destructive { background-color: rgba(252, 129, 129, 0.08); color: #fc8181; padding: 10px 20px; border: 1px solid rgba(252, 129, 129, 0.3); border-radius: 8px; font-size: 0.85rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: background-color 0.15s ease; } .ds-btn-destructive:hover { background-color: rgba(252, 129, 129, 0.15); } .ds-btn-destructive:focus-visible { outline: 2px solid #fc8181; outline-offset: 2px; }"
+    },
+    {
+      "name": "Card Surface",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Standard card container for stem players, job cards, and settings panels.",
+      "html": "<div class=\"ds-card-surface\"><h3 class=\"ds-card-title\">Stem Name</h3><p class=\"ds-card-text\">Description text goes here.</p></div>",
+      "css": ".ds-card-surface { background-color: rgba(255, 255, 255, 0.03); border: 1px solid #4a5568; border-radius: 8px; padding: 16px; transition: border-color 0.2s ease; } .ds-card-surface:hover { border-color: rgba(108, 99, 255, 0.4); } .ds-card-title { font-size: 1rem; font-weight: 600; color: #e2e8f0; margin: 0 0 8px; } .ds-card-text { font-size: 0.875rem; color: #a0aec0; margin: 0; }"
+    },
+    {
+      "name": "Upload Zone",
+      "kind": "custom",
+      "refersTo": "card-upload",
+      "description": "Drag-and-drop upload area with dashed border and icon. The signature component of Sound Splittr.",
+      "html": "<div class=\"ds-upload-zone\"><div class=\"ds-upload-icon\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"17 8 12 3 7 8\"/><line x1=\"12\" y1=\"3\" x2=\"12\" y2=\"15\"/></svg></div><p class=\"ds-upload-text\">Drop your song here</p><p class=\"ds-upload-sub\">or click to browse</p><button class=\"ds-upload-btn\">BROWSE FILES</button></div>",
+      "css": ".ds-upload-zone { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 32px; border: 2px dashed #4a5568; border-radius: 12px; background-color: rgba(255, 255, 255, 0.03); transition: all 0.2s ease; cursor: pointer; } .ds-upload-zone:hover, .ds-upload-zone.dragging { border-color: #6c63ff; background-color: rgba(108, 99, 255, 0.08); } .ds-upload-zone.dragging .ds-upload-icon { transform: scale(1.1); } .ds-upload-icon { display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 50%; background-color: rgba(108, 99, 255, 0.1); color: #6c63ff; transition: transform 0.2s ease; } .ds-upload-icon svg { width: 32px; height: 32px; } .ds-upload-text { margin: 0; font-size: 1.1rem; font-weight: 600; color: #e2e8f0; } .ds-upload-sub { margin: 0; font-size: 0.875rem; color: #a0aec0; } .ds-upload-btn { display: inline-block; padding: 10px 24px; margin-top: 8px; font-size: 0.85rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; letter-spacing: 0.05em; color: #fff; background-color: #6c63ff; border: none; border-radius: 8px; cursor: pointer; transition: filter 0.2s ease, transform 0.1s ease; } .ds-upload-btn:hover { filter: brightness(1.15); } .ds-upload-btn:active { transform: scale(0.97); }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Text input for API URL, file paths, and settings values.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"http://localhost:8000\" value=\"http://localhost:8000\">",
+      "css": ".ds-input { padding: 10px 12px; font-size: 0.9rem; color: #e2e8f0; background-color: rgba(0, 0, 0, 0.3); border: 1px solid #4a5568; border-radius: 8px; outline: none; transition: border-color 0.2s ease; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; width: 100%; box-sizing: border-box; } .ds-input::placeholder { color: #718096; } .ds-input:focus { border-color: #6c63ff; } .ds-input:focus-visible { outline: 2px solid #6c63ff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-status",
+      "description": "Small rounded badge for job status indicators. Color-coded by state.",
+      "html": "<span class=\"ds-badge ds-badge-processing\">PROCESSING</span>",
+      "css": ".ds-badge { display: inline-block; padding: 2px 8px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 4px; color: #e2e8f0; } .ds-badge-queued { background-color: rgba(236, 201, 75, 0.15); } .ds-badge-processing { background-color: rgba(108, 99, 255, 0.15); } .ds-badge-completed { background-color: rgba(72, 187, 120, 0.15); } .ds-badge-failed { background-color: rgba(252, 129, 129, 0.15); }"
+    },
+    {
+      "name": "Navigation Bar",
+      "kind": "nav",
+      "refersTo": "app-nav",
+      "description": "Sticky top navigation with brand link and page nav links. Glass effect on the nav bar only.",
+      "html": "<nav class=\"ds-nav\"><div class=\"ds-nav-inner\"><a class=\"ds-nav-brand\" href=\"#\">🎚️ Sound Splittr</a><div class=\"ds-nav-links\"><a href=\"#\" class=\"ds-nav-link active\">Home</a><a href=\"#\" class=\"ds-nav-link\">Jobs</a><a href=\"#\" class=\"ds-nav-link\">Settings</a></div></div></nav>",
+      "css": ".ds-nav { position: sticky; top: 0; z-index: 100; padding: 0 24px; font-size: 0.9rem; background-color: rgba(15, 23, 42, 0.95); border-bottom: 1px solid #4a5568; backdrop-filter: blur(8px); } .ds-nav-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 56px; } .ds-nav-brand { font-size: 1.15rem; font-weight: 700; color: #6c63ff; text-decoration: none; transition: filter 0.2s ease; } .ds-nav-brand:hover { filter: brightness(1.2); } .ds-nav-links { display: flex; gap: 4px; } .ds-nav-link { padding: 8px 16px; color: #a0aec0; text-decoration: none; border-radius: 6px; transition: all 0.15s ease; } .ds-nav-link:hover { color: #e2e8f0; background-color: rgba(255, 255, 255, 0.05); } .ds-nav-link.active { color: #fff; background-color: rgba(108, 99, 255, 0.2); }"
+    },
+    {
+      "name": "Progress Ring",
+      "kind": "custom",
+      "refersTo": "progress-ring",
+      "description": "Circular SVG progress indicator for processing jobs. Color adapts to state.",
+      "html": "<div class=\"ds-progress-ring\"><svg class=\"ds-ring\" viewBox=\"0 0 120 120\"><circle class=\"ds-ring-bg\" cx=\"60\" cy=\"60\" r=\"52\" /><circle class=\"ds-ring-progress\" cx=\"60\" cy=\"60\" r=\"52\" style=\"stroke-dasharray: 327; stroke-dashoffset: 164;\" /><text class=\"ds-ring-text\" x=\"60\" y=\"60\" text-anchor=\"middle\" dominant-baseline=\"central\">50%</text></svg></div>",
+      "css": ".ds-progress-ring { position: relative; width: 120px; height: 120px; } .ds-ring { width: 100%; height: 100%; transform: rotate(-90deg); } .ds-ring-bg { fill: none; stroke: #4a5568; stroke-width: 6; } .ds-ring-progress { fill: none; stroke: #6c63ff; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.4s ease; } .ds-ring-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; color: #6c63ff; transform: none; } .ds-progress-ring.complete .ds-ring-progress { stroke: #48bb78; } .ds-progress-ring.complete .ds-ring-text { color: #48bb78; } .ds-progress-ring.failed .ds-ring-progress { stroke: #fc8181; } .ds-progress-ring.failed .ds-ring-text { color: #fc8181; }"
+    },
+    {
+      "name": "Range Slider",
+      "kind": "input",
+      "refersTo": "range-input",
+      "description": "Custom range slider for volume and seek controls. Accent thumb on muted track.",
+      "html": "<input class=\"ds-range\" type=\"range\" min=\"0\" max=\"100\" value=\"50\">",
+      "css": ".ds-range { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; border-radius: 2px; background-color: #4a5568; outline: none; } .ds-range::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background-color: #6c63ff; cursor: pointer; } .ds-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background-color: #6c63ff; border: none; cursor: pointer; } .ds-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background-color: #4a5568; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Control Room",
+    "overview": "Sound Splittr is a DJ's audio control room — the interface of a well-built piece of studio hardware. Dark by default because that's where musicians live, technical in its language, transparent about what it's doing. Every element should feel like a knob, a meter, or a fader on a professional mixing console: purposeful, tactile, honest.\n\nThe system rejects corporate SaaS aesthetics — no gradient blobs, no 'trust the process' copy, no stock-photo warmth. Instead it draws from the visual language of audio interfaces: Ableton's functional clarity, terminal tools' transparency, the satisfaction of seeing a waveform respond to your touch. There's warmth through the purple accent and subtle hover states, never through decorative fluff.",
+    "keyCharacteristics": [
+      "Dark canvas, purple accent — the surface is deep slate, the accent fires sparingly on interactive elements",
+      "Mono for data, sans-serif for prose — monospace labels carry technical information; Inter carries the interface",
+      "Tonal layering over shadows — depth comes from subtle background shifts, not drop shadows",
+      "Inline settings, not hidden toggles — transparency is a principle, not a feature flag",
+      "Micro-interactions that respond — hover brightens, active scales down, transitions ease out"
+    ],
+    "rules": [
+      {
+        "name": "The Accent Is Rare Rule",
+        "body": "The purple accent (#6c63ff) appears on no more than 10% of any given screen. Its scarcity makes it meaningful — when you see it, something is interactive or active.",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Pure-White Rule",
+        "body": "Never use #fff for text or backgrounds. Tint everything toward the slate family. Pure white on a dark canvas is harsh and breaks the immersion of the control room.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono-For-Machine Rule",
+        "body": "Monospace font is reserved for data that comes from the system: file names, timestamps, model names, bitrates, GPU status. Human-written prose always uses Inter.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Shadow Rule",
+        "body": "Never use box-shadow for elevation. This system is flat by default; shadows feel decorative on a dark canvas. Use tonal layering (background tints) for depth.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Dashed-Border Rule",
+        "body": "Dashed borders are reserved exclusively for action zones (upload areas). Solid borders are for containers. If you see a solid border on an upload zone or a dashed border on a card, you've broken the visual language.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do use the purple accent sparingly — on interactive elements and progress indicators only.",
+      "Do reserve monospace font for machine data: file names, timestamps, model names, bitrates, GPU status.",
+      "Do use tonal layering (background tints) for depth, not drop shadows.",
+      "Do keep borders at 1px for containers and 2px dashed for action zones.",
+      "Do use filter: brightness(1.15) for hover states on accent-colored elements.",
+      "Do use transform: scale(0.97) for active/press states.",
+      "Do use ease-out transitions (0.15s-0.4s range). No bounce, no elastic.",
+      "Do use semantic colors with background tints at 15% opacity for status indicators."
+    ],
+    "donts": [
+      "Don't use box-shadow for elevation. This system is flat by default.",
+      "Don't use #fff for text or backgrounds. Always tint toward the slate family.",
+      "Don't use solid fills for semantic colors. Background tints at 15% opacity are the standard.",
+      "Don't use more than one saturated color on screen.",
+      "Don't put settings behind 'Advanced' toggles. Transparency is a principle.",
+      "Don't use gradient backgrounds on cards or buttons.",
+      "Don't use glassmorphism except on the navigation bar.",
+      "Don't use side-stripe borders on cards or list items (except job status indicators).",
+      "Don't use identical card grids. Vary padding, gap, and card sizes based on content density."
+    ]
+  }
+}

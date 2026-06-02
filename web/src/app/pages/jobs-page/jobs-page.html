@@ -1,0 +1,237 @@
+<div class="jobs-page">
+  <!-- Header -->
+  <header class="page-header">
+    <h2>Split History</h2>
+    <button class="btn-refresh" (click)="loadJobs()" [disabled]="loading">
+      {{ loading ? "Loading..." : "Refresh" }}
+    </button>
+  </header>
+
+  <!-- Error banner -->
+  @if (error) {
+  <div class="error-banner">{{ error }}</div>
+  }
+
+  <!-- Controls: search + filter pills -->
+  @if (!loading) {
+  <div class="controls-bar">
+    <div class="search-wrapper">
+      <svg
+        class="search-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+      <input
+        type="text"
+        placeholder="Search by filename..."
+        [value]="searchQuery"
+        (input)="onSearchInput($event)"
+        class="search-input"
+        aria-label="Search jobs by filename"
+      />
+      @if (searchQuery) {
+      <button
+        class="search-clear"
+        (click)="searchQuery = ''; clearSelection()"
+        aria-label="Clear search"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      }
+    </div>
+
+    <div class="status-filters">
+      @for (opt of statusFilterOptions; track opt.value) {
+      <button
+        class="filter-pill"
+        [class.active]="statusFilter === opt.value"
+        (click)="onStatusFilter(opt.value)"
+        [attr.aria-pressed]="statusFilter === opt.value"
+      >
+        {{ opt.label }} @if (opt.count > 0) {
+        <span class="filter-count">{{ opt.count }}</span>
+        }
+      </button>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- Bulk delete bar -->
+  @if (selectedCount > 0) {
+  <div class="bulk-bar">
+    <div class="bulk-info">
+      <label class="bulk-label">
+        <input
+          type="checkbox"
+          [checked]="isAllSelected"
+          [indeterminate]="isSomeSelected"
+          (change)="toggleSelectAll()"
+        />
+        {{ selectedCount }} selected
+      </label>
+    </div>
+    <button class="btn-bulk-delete" (click)="onBulkDelete()">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="3 6 5 6 21 6" />
+        <path
+          d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+        />
+      </svg>
+      Delete {{ selectedCount }}
+    </button>
+    <button class="btn-bulk-clear" (click)="clearSelection()">Clear</button>
+  </div>
+  }
+
+  <!-- Empty state: no jobs at all -->
+  @if (!loading && jobs.length === 0) {
+  <div class="empty-state">
+    <p class="empty-icon">⏱</p>
+    <h3>No splits yet</h3>
+    <p>
+      Your split history will appear here. Go to the Home page to split your
+      first track!
+    </p>
+    <button routerLink="/" class="btn-primary">Go to Home</button>
+  </div>
+  }
+
+  <!-- Empty state: filtered results -->
+  @if (!loading && jobs.length > 0 && filteredJobs.length === 0) {
+  <div class="empty-state filtered">
+    <p class="empty-icon">🔍</p>
+    <h3>No matching jobs</h3>
+    <p>
+      @if (searchQuery && statusFilter === 'all') { No jobs match "<strong
+        >{{ searchQuery }}</strong
+      >". Try a different search. } @else if (statusFilter !== 'all' &&
+      !searchQuery) { No jobs with status "<strong
+        >{{ statusFilterOptions.find(f => f.value === statusFilter)?.label
+        }}</strong
+      >". } @else { No jobs match your search and filter. Try adjusting your
+      criteria. }
+    </p>
+  </div>
+  }
+
+  <!-- Job list -->
+  @if (!loading && filteredJobs.length > 0) {
+  <div class="job-list">
+    @for (job of filteredJobs; track job.id) {
+    <div
+      class="job-card"
+      [class]="getStatusClass(job.status)"
+      [class.selected]="selectedIds.has(job.id)"
+    >
+      <!-- Checkbox -->
+      <div class="job-checkbox">
+        <input
+          type="checkbox"
+          [checked]="selectedIds.has(job.id)"
+          (change)="toggleSelect(job.id)"
+          aria-label="Select job"
+        />
+      </div>
+
+      <!-- Job info -->
+      <div class="job-info">
+        <span class="job-filename" [title]="job.fileName"
+          >{{ job.fileName }}</span
+        >
+        <span class="job-meta">
+          <span class="meta-item">{{ formatRelative(job.createdAt) }}</span>
+          @if (job.durationSeconds) {
+          <span class="meta-divider">·</span>
+          <span class="meta-item"
+            >{{ formatDuration(job.durationSeconds) }}</span
+          >
+          } @if (getStemCount(job) > 0) {
+          <span class="meta-divider">·</span>
+          <span class="meta-item">{{ getStemCount(job) }} stems</span>
+          } @if (job.modelUsed) {
+          <span class="meta-divider">·</span>
+          <span class="meta-item">{{ job.modelUsed }}</span>
+          }
+        </span>
+      </div>
+
+      <!-- Actions -->
+      <div class="job-actions">
+        <!-- Status badge with icon -->
+        <span class="status-badge" [class]="getStatusClass(job.status)">
+          <span
+            class="status-icon"
+            [innerHTML]="getStatusIcon(job.status)"
+          ></span>
+          {{ capitalize(job.status) }}
+        </span>
+
+        <!-- Progress bar -->
+        @if (job.progress > 0 && job.progress < 100) {
+        <div class="mini-progress">
+          <div class="mini-bar" [style.width.%]="job.progress"></div>
+        </div>
+        }
+
+        <!-- Error message -->
+        @if (job.error) {
+        <span class="job-error" [title]="job.error">{{ job.error }}</span>
+        }
+
+        <!-- Delete button -->
+        <button
+          class="btn-delete"
+          (click)="onDelete(job.id)"
+          aria-label="Delete job"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>

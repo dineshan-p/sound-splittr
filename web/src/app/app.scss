@@ -1,0 +1,62 @@
+/**
+ * App Shell Styles — Navigation bar + page wrapper
+ */
+
+.app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0 24px;
+  font-size: 0.9rem;
+  background-color: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid var(--color-border, #4a5568);
+  backdrop-filter: blur(8px);
+
+  .nav-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+
+  // Brand / logo link
+  .brand {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-accent, #6c63ff);
+    text-decoration: none;
+    transition: filter 0.2s ease;
+
+    &:hover { filter: brightness(1.15); }
+  }
+
+  // Navigation links
+  .nav-links {
+    display: flex;
+    gap: 4px;
+
+    a {
+      padding: 8px 16px;
+      color: var(--color-muted, #a0aec0);
+      text-decoration: none;
+      border-radius: 6px;
+      transition: color 0.15s ease, background-color 0.15s ease;
+
+      &:hover {
+        color: var(--color-text, #e2e8f0);
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+
+      &.active {
+        color: #f1f5f9;
+        background-color: rgba(108, 99, 255, 0.2);
+      }
+    }
+  }
+}
+
+.app-main {
+  min-height: calc(100vh - 56px);
+}

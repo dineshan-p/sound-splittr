@@ -1,0 +1,194 @@
+/**
+ * Stem-Player Styles
+ * ===================
+ * A compact audio player card styled for a dark DJ-themed interface.
+ */
+
+.stem-card {
+  $base: &;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 10px;
+  background-color: var(--color-bg-subtle, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--color-border, #4a5568);
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: rgba(108, 99, 255, 0.4);
+  }
+
+  // ── Header row ───────────────────────────────────────────────────────
+
+  .stem-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .stem-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text, #e2e8f0);
+  }
+
+  // ── Control buttons in header ────────────────────────────────────────
+
+  .header-controls {
+    display: flex;
+    gap: 4px;
+  }
+
+  .ctrl-btn {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: 1px solid var(--color-border, #4a5568);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-muted, #a0aec0);
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-accent, #6c63ff);
+      outline-offset: 1px;
+    }
+
+    &.muted {
+      color: var(--color-error, #fc8181);
+      border-color: rgba(252, 129, 129, 0.4);
+    }
+
+    &.solo-active {
+      background-color: rgba(72, 187, 120, 0.15);
+      color: var(--color-success, #48bb78);
+      border-color: rgba(72, 187, 120, 0.5);
+    }
+  }
+
+  // ── Big play/pause button ────────────────────────────────────────────
+
+  .play-btn {
+    align-self: center;
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--color-accent, #6c63ff);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.1s ease, filter 0.2s ease;
+
+    &:hover {
+      filter: brightness(1.15);
+    }
+
+    &:active {
+      transform: scale(0.93);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+  }
+
+  // ── Seek bar ─────────────────────────────────────────────────────────
+
+  .seek-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .time {
+    font-size: 0.75rem;
+    color: var(--color-muted, #a0aec0);
+    min-width: 36px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // ── Range inputs (shared) ────────────────────────────────────────────
+
+  .range-input {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 2px;
+    background-color: var(--color-border, #4a5568);
+    outline: none;
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background-color: var(--color-accent, #6c63ff);
+      cursor: pointer;
+    }
+
+    &::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background-color: var(--color-accent, #6c63ff);
+      border: none;
+      cursor: pointer;
+    }
+
+    &::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 2px;
+      background-color: var(--color-border, #4a5568);
+    }
+  }
+
+  .volume-input {
+    max-width: 100px;
+    margin-left: auto;
+  }
+
+  // ── Stem name badge ──────────────────────────────────────────────────
+
+  .stem-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-muted, #a0aec0);
+    background-color: rgba(160, 174, 192, 0.1);
+    border-radius: 4px;
+    align-self: flex-start;
+  }
+
+  // Screen-reader-only label
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}

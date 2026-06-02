@@ -1,0 +1,76 @@
+<div class="settings-panel">
+  <h3 class="panel-title">Settings</h3>
+
+  <!-- API URL -->
+  <div class="form-group">
+    <label for="api-url" class="form-label">API Base URL</label>
+    <input
+      id="api-url"
+      type="url"
+      #apiInput
+      [value]="apiUrl"
+      (input)="apiUrl = apiInput.value"
+      placeholder="http://localhost:8000"
+      class="form-input"
+    />
+    <span class="form-hint"
+      >Address where the stem-splitting API is running</span
+    >
+
+    <!-- Test connection button -->
+    <button class="btn-test" (click)="testConnection()">Test</button>
+  </div>
+
+  <!-- Default Model -->
+  <div class="form-group">
+    <label for="model-select" class="form-label">Default Model</label>
+    <select
+      id="model-select"
+      #modelSelect
+      [value]="model"
+      (change)="model = modelSelect.value"
+      class="form-input form-select"
+    >
+      @for (opt of models; track opt.id) {
+      <option [value]="opt.id">{{ opt.label }}</option>
+      }
+    </select>
+    <span class="form-hint">{{ getModelLabel(model) }}</span>
+  </div>
+
+  <!-- Output Format -->
+  <div class="form-group">
+    <label for="format-select" class="form-label">Output Format</label>
+    <select
+      id="format-select"
+      #formatSelect
+      [value]="format"
+      (change)="setFormatValue(formatSelect.value)"
+      class="form-input form-select"
+    >
+      <option value="mp3">MP3 (lossy, smaller files)</option>
+      <option value="wav">WAV (lossless, larger files)</option>
+      <option value="flac">FLAC (lossless compressed)</option>
+    </select>
+  </div>
+
+  <!-- MP3 Bitrate — only relevant when MP3 is selected -->
+  @if (format === 'mp3') {
+  <div class="form-group">
+    <label for="bitrate-select" class="form-label">MP3 Bitrate</label>
+    <select
+      id="bitrate-select"
+      [(ngModel)]="bitrate"
+      class="form-input form-select"
+    >
+      <option [ngValue]="128">128 kbps (standard)</option>
+      <option [ngValue]="192">192 kbps (good)</option>
+      <option [ngValue]="256">256 kbps (high)</option>
+      <option [ngValue]="320">320 kbps (maximum)</option>
+    </select>
+  </div>
+  }
+
+  <!-- Reset button -->
+  <button class="btn-reset" (click)="resetToDefaults()">Reset</button>
+</div>

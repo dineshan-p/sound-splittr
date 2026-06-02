@@ -46,10 +46,11 @@ class TestAudioIOImports:
 class TestDemucsHelperImports:
     """Verify that the Demucs helper module can be imported."""
 
-    def test_demucs_engine_class_exists(self):
-        from src.core.demucs_helper import DemucsEngine
+    def test_model_info_exists(self):
+        from src.core.demucs_helper import ModelInfo
 
-        assert DemucsEngine is not None, "DemucsEngine class should exist"
+        assert ModelInfo is not None, "ModelInfo dict should exist"
+        assert "htdemucs" in ModelInfo, "Default model htdemucs should be listed"
 
     def test_get_available_models_returns_dict(self):
         from src.core.demucs_helper import get_available_models
@@ -57,6 +58,11 @@ class TestDemucsHelperImports:
         models = get_available_models()
         assert isinstance(models, dict), "Should return a dictionary of model info"
         assert "htdemucs" in models, "Default model htdemucs should be listed"
+
+    def test_get_model_is_callable(self):
+        from src.core.demucs_helper import get_model
+
+        assert callable(get_model), "get_model should be a callable function"
 
 
 class TestPipelineImports:
