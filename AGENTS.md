@@ -242,10 +242,10 @@ sound-splittr/
 - [x] pytest.ini + vitest.config.ts configured
 - [x] `.gitignore` and `requirements.txt` cleanup
 
-### Phase 4: Production Readiness (Next)
+### Phase 4: Production Readiness ✅ Complete
 
-- [ ] Docker container (backend + frontend)
-- [ ] Docker Compose for local dev
+- [x] Docker container (backend + frontend)
+- [x] Docker Compose for local dev
 - [ ] CI/CD pipeline
 
 ### Phase 5: Maintenance (Ongoing)

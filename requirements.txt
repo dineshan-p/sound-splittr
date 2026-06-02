@@ -33,6 +33,7 @@ click>=8.1.7
 # Backend REST API
 fastapi>=0.115.0
 uvicorn>=0.30.0
+python-multipart>=0.0.9
 
 # Testing
 pytest>=8.3.0
